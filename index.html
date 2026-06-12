@@ -625,44 +625,158 @@
 
         async function renderSHU() {
             document.getElementById('main-content').innerHTML = `
-                <div class="flex flex-col items-center justify-center h-full bg-white rounded-2xl shadow-soft border border-gray-50 py-20">
-                    <div class="w-20 h-20 bg-green-50 text-primary rounded-full flex items-center justify-center mb-6">
-                        <i data-lucide="pie-chart" class="w-10 h-10"></i>
+                <div class="bg-white rounded-2xl shadow-soft border border-gray-50">
+                    <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 rounded-t-2xl">
+                        <div>
+                            <h3 class="font-bold text-gray-800">Kalkulator Pembagian SHU</h3>
+                            <p class="text-xs text-gray-500 mt-1">Hitung dan alokasikan Sisa Hasil Usaha tahunan.</p>
+                        </div>
                     </div>
-                    <h2 class="text-2xl font-bold text-gray-800">Kalkulator Pembagian SHU</h2>
-                    <p class="text-gray-500 mt-2 max-w-md text-center text-sm">Modul pembagian Sisa Hasil Usaha akhir tahun buku sedang dalam tahap pengembangan sesuai formula AD/ART Koperasi Anda.</p>
-                    <button disabled class="mt-8 bg-gray-100 text-gray-400 px-6 py-3 rounded-xl font-bold cursor-not-allowed">Generate SHU Tahunan (Locked)</button>
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <!-- Input Data -->
+                            <div class="space-y-4">
+                                <h4 class="font-bold text-sm text-gray-700 border-b pb-2">1. Data Keuangan Tahun Buku</h4>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 mb-1">Tahun Buku</label>
+                                    <input type="number" id="shu-year" value="${new Date().getFullYear()}" class="w-full border bg-gray-50 px-4 py-2.5 rounded-xl outline-none focus:border-primary">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 mb-1">Total Pendapatan (Rp)</label>
+                                    <input type="number" id="shu-income" placeholder="0" class="w-full border bg-gray-50 px-4 py-2.5 rounded-xl outline-none focus:border-primary">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 mb-1">Total Biaya/Pengeluaran (Rp)</label>
+                                    <input type="number" id="shu-expense" placeholder="0" class="w-full border bg-gray-50 px-4 py-2.5 rounded-xl outline-none focus:border-primary">
+                                </div>
+                                <div class="pt-4 border-t">
+                                    <button onclick="calculateSHU()" class="w-full bg-primary hover:bg-green-400 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2">
+                                        <i data-lucide="calculator" class="w-4 h-4"></i> Hitung SHU Bersih
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Alokasi SHU -->
+                            <div class="bg-gray-50 p-6 rounded-xl border border-gray-100">
+                                <h4 class="font-bold text-sm text-gray-700 border-b pb-2 mb-4">2. Alokasi Pembagian (Draft)</h4>
+                                <div class="flex justify-between items-center mb-6">
+                                    <span class="text-sm font-medium text-gray-500">SHU Bersih:</span>
+                                    <span id="shu-net" class="text-2xl font-bold text-success">Rp 0</span>
+                                </div>
+                                <div class="space-y-3">
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-600">Dana Cadangan (20%)</span>
+                                        <span id="shu-cadangan" class="font-medium text-gray-800">Rp 0</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-600">Jasa Anggota (40%)</span>
+                                        <span id="shu-anggota" class="font-medium text-gray-800">Rp 0</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-600">Jasa Modal (20%)</span>
+                                        <span id="shu-modal" class="font-medium text-gray-800">Rp 0</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-600">Dana Pengurus dkk (20%)</span>
+                                        <span id="shu-pengurus" class="font-medium text-gray-800">Rp 0</span>
+                                    </div>
+                                </div>
+                                <button onclick="alert('Fitur Distribusi ke Saldo Anggota sedang disiapkan')" class="w-full mt-6 bg-gray-800 hover:bg-gray-700 text-white font-bold py-3 rounded-xl transition">
+                                    Distribusikan SHU
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             `; 
             lucide.createIcons();
         }
 
+        // Logic Pembantu untuk SHU
+        function calculateSHU() {
+            const income = Number(document.getElementById('shu-income').value) || 0;
+            const expense = Number(document.getElementById('shu-expense').value) || 0;
+            
+            const netSHU = income - expense;
+            
+            if(netSHU < 0) {
+                showToast("Pendapatan lebih kecil dari pengeluaran (Rugi)", "error");
+                return;
+            }
+
+            document.getElementById('shu-net').textContent = formatRp(netSHU);
+            document.getElementById('shu-cadangan').textContent = formatRp(netSHU * 0.20);
+            document.getElementById('shu-anggota').textContent = formatRp(netSHU * 0.40);
+            document.getElementById('shu-modal').textContent = formatRp(netSHU * 0.20);
+            document.getElementById('shu-pengurus').textContent = formatRp(netSHU * 0.20);
+        }
+
         async function renderConfig() {
             document.getElementById('main-content').innerHTML = `
-                <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-soft border border-gray-50">
+                <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-soft border border-gray-50">
                     <div class="p-6 border-b border-gray-100 bg-gray-50/50 rounded-t-2xl">
                         <h3 class="font-bold text-gray-800">Konfigurasi Sistem Global</h3>
-                        <p class="text-xs text-gray-500 mt-1">Pengaturan operasional koperasi.</p>
+                        <p class="text-xs text-gray-500 mt-1">Pengaturan operasional koperasi dan integrasi pihak ketiga.</p>
                     </div>
-                    <div class="p-6 space-y-6">
+                    <div class="p-6 space-y-8">
+                        <!-- Plafon Pinjaman -->
                         <div>
-                            <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Maksimal Plafon Pinjaman (%)</label>
-                            <div class="flex gap-2">
-                                <input type="number" value="80" class="w-full border bg-gray-50 px-4 py-2.5 rounded-xl outline-none" disabled>
-                                <button class="bg-gray-800 text-white px-6 rounded-xl font-bold">Simpan</button>
+                            <h4 class="flex items-center gap-2 font-bold text-gray-700 mb-3"><i data-lucide="percent" class="w-4 h-4 text-primary"></i> Parameter Pinjaman</h4>
+                            <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                                <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Maksimal Plafon Pinjaman (%)</label>
+                                <div class="flex gap-2">
+                                    <input type="number" id="cfg-plafon" value="80" class="w-full border bg-white px-4 py-2.5 rounded-xl outline-none focus:ring-1 focus:ring-primary">
+                                    <button onclick="saveConfig('plafon')" class="bg-gray-800 hover:bg-gray-700 text-white px-6 rounded-xl font-bold transition">Simpan</button>
+                                </div>
+                                <p class="text-xs text-gray-400 mt-2">Persentase maksimal nominal pinjaman yang diizinkan dari total saldo simpanan anggota.</p>
                             </div>
-                            <p class="text-xs text-gray-400 mt-1">Persentase maksimal pinjaman dari total saldo simpanan anggota.</p>
                         </div>
-                        <div class="border-t border-gray-100 pt-6">
-                            <label class="block text-xs font-bold text-gray-500 uppercase mb-2">WhatsApp Gateway API Key</label>
-                            <div class="flex gap-2">
-                                <input type="text" placeholder="Masukkan API Key Fonnte/WAPlus" class="w-full border bg-gray-50 px-4 py-2.5 rounded-xl outline-none">
-                                <button class="bg-gray-800 text-white px-6 rounded-xl font-bold">Simpan</button>
+
+                        <!-- WA Gateway -->
+                        <div>
+                            <h4 class="flex items-center gap-2 font-bold text-gray-700 mb-3"><i data-lucide="message-square" class="w-4 h-4 text-primary"></i> Integrasi WhatsApp Gateway</h4>
+                            <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 space-y-4">
+                                
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Penyedia Layanan (Provider)</label>
+                                    <select id="cfg-wa-provider" class="w-full border bg-white px-4 py-2.5 rounded-xl outline-none focus:ring-1 focus:ring-primary">
+                                        <option value="fonnte">Fonnte API</option>
+                                        <option value="waplus">WAPlus API</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Nomor Pengirim (Sender Number)</label>
+                                    <input type="text" id="cfg-wa-sender" placeholder="Contoh: 6281234567890" class="w-full border bg-white px-4 py-2.5 rounded-xl outline-none focus:ring-1 focus:ring-primary">
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-2">API Token / API Key</label>
+                                    <input type="password" id="cfg-wa-token" placeholder="Masukkan rahasia API Token" class="w-full border bg-white px-4 py-2.5 rounded-xl outline-none focus:ring-1 focus:ring-primary">
+                                </div>
+
+                                <div class="pt-2">
+                                    <button onclick="saveConfig('whatsapp')" class="w-full bg-primary hover:bg-green-400 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2">
+                                        <i data-lucide="save" class="w-4 h-4"></i> Simpan Pengaturan WA
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             `;
+            lucide.createIcons();
+        }
+
+        // Logic Pembantu untuk Config
+        function saveConfig(type) {
+            // Ini cuma simulasi UI. Nanti dihubungkan ke API beneran pakai apiCall('saveConfig', {...})
+            showLoader();
+            setTimeout(() => {
+                hideLoader();
+                if(type === 'plafon') showToast("Plafon pinjaman berhasil diperbarui");
+                if(type === 'whatsapp') showToast("Konfigurasi WhatsApp Gateway tersimpan");
+            }, 800);
         }
 
         // API ACTIONS (MEMBERS & LOANS)
