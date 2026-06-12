@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iMersKoperasi - Koperasi Digital</title>
+    <!-- Tailwind via CDN untuk UI Premium tanpa file CSS eksternal -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cream: '#FBF7F0',
+                        softCream: '#F8EDE3',
+                        peach: '#FADCD9',
+                        lavender: '#E8DFF5',
+                        pastelBlue: '#DDEBFF',
+                        pastelYellow: '#FFF1C7',
+                        softCoral: '#F4A7A1',
+                        softGold: '#D9A441',
+                        navy: '#1E293B',
+                        darkText: '#334155'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: theme('colors.cream'); color: theme('colors.darkText'); }
+        .hidden-view { display: none !important; }
+        .card { background: white; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); padding: 1.5rem; }
+        .btn-primary { background-color: theme('colors.navy'); color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 500; transition: all 0.2s; }
+        .btn-primary:hover { background-color: theme('colors.darkText'); transform: translateY(-1px); }
+        .input-field { width: 100%; padding: 0.75rem 1rem; border: 1px solid theme('colors.softCream'); border-radius: 0.5rem; background: theme('colors.cream'); outline: none; transition: border-color 0.2s; }
+        .input-field:focus { border-color: theme('colors.softGold'); background: white; }
+        #loader { position: fixed; inset: 0; background: rgba(251, 247, 240, 0.8); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+        .spinner { border: 4px solid theme('colors.peach'); border-top-color: theme('colors.softCoral'); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="antialiased text-darkText bg-cream">
+
+    <!-- CONFIG API -->
+    <script>
+        const CONFIG = {
+            API_URL: "https://script.google.com/macros/s/AKfycbyi81zS9_Q6jB92yv96jI0o4D-_n9x6yFwQz5a_b8/exec", // GANTI DENGAN URL WEB APP ANDA
+            APP_NAME: "iMersKoperasi"
+        };
+    </script>
+
+    <!-- Global Loader -->
+    <div id="loader" class="hidden-view">
+        <div class="flex flex-col items-center">
+            <div class="spinner mb-4"></div>
+            <p class="font-medium text-navy animate-pulse">Memproses Data...</p>
+        </div>
+    </div>
+
+    <!-- Alert Modal -->
+    <div id="alert-modal" class="hidden-view fixed inset-0 flex items-center justify-center z-50 bg-navy/20 backdrop-blur-sm px-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 transform transition-all text-center">
+            <i id="alert-icon" data-lucide="info" class="w-12 h-12 mx-auto mb-4 text-navy"></i>
+            <h3 id="alert-title" class="text-lg font-bold text-navy mb-2">Notifikasi</h3>
+            <p id="alert-message" class="text-darkText mb-6">Pesan di sini</p>
+            <button onclick="UI.closeAlert()" class="btn-primary w-full">Tutup</button>
+        </div>
+    </div>
+
+    <!-- VIEW: LANDING PAGE -->
+    <div id="view-landing" class="view-section min-h-screen flex flex-col">
+        <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-softCream">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <div class="w-10 h-10 bg-softGold rounded-xl flex items-center justify-center text-white font-bold text-xl">iK</div>
+                    <span class="text-2xl font-bold text-navy">iMers<span class="text-softGold">Koperasi</span></span>
+                </div>
+                <div class="hidden md:flex space-x-8">
+                    <a href="#home" class="text-darkText hover:text-navy font-medium">Home</a>
+                    <a href="#fitur" class="text-darkText hover:text-navy font-medium">Fitur</a>
+                    <a href="#faq" class="text-darkText hover:text-navy font-medium">FAQ</a>
+                </div>
+                <div>
+                    <button onclick="App.navigate('view-login')" class="btn-primary flex items-center gap-2">
+                        <i data-lucide="log-in" class="w-4 h-4"></i> Login Portal
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <main class="flex-grow">
+            <!-- Hero -->
+            <section id="home" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 flex flex-col md:flex-row items-center gap-12">
+                <div class="md:w-1/2">
+                    <span class="px-4 py-1.5 rounded-full bg-peach/50 text-softCoral font-semibold text-sm mb-6 inline-block">✨ Koperasi Digital Modern</span>
+                    <h1 class="text-5xl font-bold text-navy leading-tight mb-6">Solusi Aplikasi Koperasi Digital Anda</h1>
+                    <p class="text-lg text-darkText mb-8 leading-relaxed">Kelola anggota, simpanan, pinjaman, angsuran, transaksi, laporan, dan notifikasi koperasi lebih mudah dalam satu sistem terintegrasi.</p>
+                    <div class="flex gap-4">
+                        <button onclick="App.navigate('view-login')" class="btn-primary">Coba Demo Sekarang</button>
+                        <button class="bg-white border border-softCream text-navy px-6 py-3 rounded-lg font-medium hover:bg-softCream transition">Hubungi WhatsApp</button>
+                    </div>
+                </div>
+                <div class="md:w-1/2 relative">
+                    <div class="absolute inset-0 bg-lavender rounded-[3rem] transform rotate-3 scale-105 -z-10"></div>
+                    <img src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&q=80&w=600" alt="Dashboard Koperasi" class="rounded-[2rem] shadow-2xl border-8 border-white object-cover h-[400px] w-full">
+                </div>
+            </section>
+
+            <!-- Features -->
+            <section id="fitur" class="bg-white py-20">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="text-center max-w-3xl mx-auto mb-16">
+                        <h2 class="text-3xl font-bold text-navy mb-4">Kemudahan dalam Genggaman</h2>
+                        <p class="text-darkText text-lg">Sistem terpusat dengan notifikasi real-time WhatsApp & Email yang dibangun untuk memajukan koperasi masa kini.</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                        <div class="card bg-pastelBlue/20 border border-pastelBlue text-center hover:-translate-y-2 transition-transform duration-300">
+                            <div class="w-16 h-16 mx-auto bg-white rounded-full flex items-center justify-center mb-6 shadow-sm">
+                                <i data-lucide="users" class="w-8 h-8 text-blue-500"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-navy mb-2">Data Anggota</h3>
+                            <p class="text-sm text-darkText">Digitalisasi data anggota dengan pencarian mudah dan akses dashboard personal.</p>
+                        </div>
+                        <div class="card bg-pastelYellow/20 border border-pastelYellow text-center hover:-translate-y-2 transition-transform duration-300">
+                            <div class="w-16 h-16 mx-auto bg-white rounded-full flex items-center justify-center mb-6 shadow-sm">
+                                <i data-lucide="wallet" class="w-8 h-8 text-yellow-600"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-navy mb-2">Simpanan Rapi</h3>
+                            <p class="text-sm text-darkText">Pencatatan simpanan pokok, wajib, dan sukarela secara akurat dan transparan.</p>
+                        </div>
+                        <div class="card bg-peach/20 border border-peach text-center hover:-translate-y-2 transition-transform duration-300">
+                            <div class="w-16 h-16 mx-auto bg-white rounded-full flex items-center justify-center mb-6 shadow-sm">
+                                <i data-lucide="file-text" class="w-8 h-8 text-softCoral"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-navy mb-2">Pinjaman Mudah</h3>
+                            <p class="text-sm text-darkText">Pengajuan online, approval cepat, dan pantauan sisa tagihan angsuran.</p>
+                        </div>
+                        <div class="card bg-lavender/30 border border-lavender text-center hover:-translate-y-2 transition-transform duration-300">
+                            <div class="w-16 h-16 mx-auto bg-white rounded-full flex items-center justify-center mb-6 shadow-sm">
+                                <i data-lucide="bell" class="w-8 h-8 text-purple-500"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-navy mb-2">Notifikasi Otomatis</h3>
+                            <p class="text-sm text-darkText">Kirim resi dan tagihan langsung via WhatsApp (Fonnte/Waplus) & Email.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+        
+        <footer class="bg-navy text-white py-8 text-center">
+            <p>&copy; 2026 iMersKoperasi. Solusi Aplikasi Koperasi Digital Terbaik.</p>
+        </footer>
+    </div>
+
+    <!-- VIEW: LOGIN -->
+    <div id="view-login" class="view-section hidden-view min-h-screen flex items-center justify-center p-4">
+        <div class="w-full max-w-md">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-softGold mx-auto rounded-2xl flex items-center justify-center text-white font-bold text-2xl mb-4">iK</div>
+                <h1 class="text-3xl font-bold text-navy">Selamat Datang</h1>
+                <p class="text-darkText mt-2">Login ke portal Koperasi</p>
+            </div>
+            <div class="card">
+                <form id="form-login" onsubmit="App.handleLogin(event)">
+                    <div class="mb-5">
+                        <label class="block text-sm font-semibold text-navy mb-2">Email atau Nomor WhatsApp</label>
+                        <input type="text" id="login-identifier" class="input-field" placeholder="contoh@email.com / 0812..." required>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-sm font-semibold text-navy mb-2">Password</label>
+                        <input type="password" id="login-password" class="input-field" placeholder="••••••••" required>
+                    </div>
+                    <button type="submit" class="btn-primary w-full flex justify-center items-center gap-2">
+                        <i data-lucide="log-in" class="w-4 h-4"></i> Masuk Sekarang
+                    </button>
+                </form>
+                <div class="mt-6 p-4 bg-softCream rounded-lg text-sm border border-peach/50">
+                    <p class="font-bold text-navy mb-1"><i data-lucide="info" class="w-4 h-4 inline"></i> Info Demo Akun:</p>
+                    <p><b>Admin:</b> admin@koperasi.test / admin123</p>
+                    <p><b>Anggota:</b> anggota@koperasi.test / anggota123</p>
+                </div>
+                <div class="mt-4 text-center">
+                    <button onclick="App.navigate('view-landing')" class="text-sm text-softGold hover:underline">Kembali ke Beranda</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIEW: ADMIN DASHBOARD -->
+    <div id="view-admin" class="view-section hidden-view min-h-screen bg-cream flex flex-col md:flex-row">
+        <!-- Sidebar -->
+        <aside class="w-full md:w-64 bg-white border-r border-softCream p-6 flex flex-col h-auto md:min-h-screen">
+            <div class="flex items-center gap-2 mb-10">
+                <div class="w-8 h-8 bg-navy rounded-lg flex items-center justify-center text-white font-bold text-sm">iK</div>
+                <span class="text-xl font-bold text-navy">iMersAdmin</span>
+            </div>
+            <nav class="flex-grow space-y-2">
+                <a href="#" class="flex items-center gap-3 p-3 rounded-lg bg-softCream text-navy font-semibold"><i data-lucide="layout-dashboard" class="w-5 h-5"></i> Dashboard</a>
+                <a href="#" class="flex items-center gap-3 p-3 rounded-lg text-darkText hover:bg-cream hover:text-navy transition"><i data-lucide="users" class="w-5 h-5"></i> Anggota</a>
+                <a href="#" class="flex items-center gap-3 p-3 rounded-lg text-darkText hover:bg-cream hover:text-navy transition"><i data-lucide="wallet" class="w-5 h-5"></i> Simpanan</a>
+                <a href="#" class="flex items-center gap-3 p-3 rounded-lg text-darkText hover:bg-cream hover:text-navy transition"><i data-lucide="file-text" class="w-5 h-5"></i> Pinjaman</a>
+                <a href="#" class="flex items-center gap-3 p-3 rounded-lg text-darkText hover:bg-cream hover:text-navy transition" onclick="App.showSettings(event)"><i data-lucide="settings" class="w-5 h-5"></i> Pengaturan Notif</a>
+            </nav>
+            <div class="mt-auto pt-6 border-t border-softCream">
+                <button onclick="App.logout()" class="flex items-center gap-3 p-3 w-full rounded-lg text-red-500 hover:bg-red-50 transition font-medium">
+                    <i data-lucide="log-out" class="w-5 h-5"></i> Keluar
+                </button>
+            </div>
+        </aside>
+        
+        <!-- Main Content Admin -->
+        <main class="flex-grow p-6 md:p-10 w-full overflow-y-auto">
+            <header class="flex justify-between items-center mb-10">
+                <div>
+                    <h2 class="text-2xl font-bold text-navy" id="admin-welcome">Halo, Admin</h2>
+                    <p class="text-darkText">Ringkasan Koperasi Hari Ini</p>
+                </div>
+                <div class="w-10 h-10 bg-pastelBlue rounded-full flex items-center justify-center text-navy font-bold shadow-sm">
+                    A
+                </div>
+            </header>
+
+            <div id="admin-dashboard-content">
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+                    <div class="card border-l-4 border-pastelBlue">
+                        <p class="text-sm text-darkText font-medium mb-1">Total Anggota Aktif</p>
+                        <h3 class="text-2xl font-bold text-navy" id="admin-stat-anggota">0</h3>
+                    </div>
+                    <div class="card border-l-4 border-softGold">
+                        <p class="text-sm text-darkText font-medium mb-1">Total Simpanan</p>
+                        <h3 class="text-2xl font-bold text-navy" id="admin-stat-simpanan">Rp 0</h3>
+                    </div>
+                    <div class="card border-l-4 border-softCoral">
+                        <p class="text-sm text-darkText font-medium mb-1">Pinjaman Aktif</p>
+                        <h3 class="text-2xl font-bold text-navy" id="admin-stat-pinjaman">Rp 0</h3>
+                    </div>
+                    <div class="card border-l-4 border-lavender">
+                        <p class="text-sm text-darkText font-medium mb-1">Total Transaksi</p>
+                        <h3 class="text-2xl font-bold text-navy" id="admin-stat-transaksi">0</h3>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Anggota Baru -->
+                    <div class="card">
+                        <h3 class="text-lg font-bold text-navy mb-4 flex items-center gap-2"><i data-lucide="users" class="w-5 h-5"></i> Anggota Baru</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="border-b border-softCream text-sm text-darkText">
+                                        <th class="pb-3 font-medium">Nama</th>
+                                        <th class="pb-3 font-medium">Email</th>
+                                        <th class="pb-3 font-medium">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-table-anggota" class="text-sm">
+                                    <tr><td colspan="3" class="py-4 text-center text-gray-400">Memuat...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Simpanan Terbaru -->
+                    <div class="card">
+                        <h3 class="text-lg font-bold text-navy mb-4 flex items-center gap-2"><i data-lucide="activity" class="w-5 h-5"></i> Simpanan Terbaru</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="border-b border-softCream text-sm text-darkText">
+                                        <th class="pb-3 font-medium">Anggota ID</th>
+                                        <th class="pb-3 font-medium">Jenis</th>
+                                        <th class="pb-3 font-medium">Nominal</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-table-simpanan" class="text-sm">
+                                    <tr><td colspan="3" class="py-4 text-center text-gray-400">Memuat...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Content (Hidden by default) -->
+            <div id="admin-settings-content" class="hidden-view card max-w-3xl">
+                <h3 class="text-xl font-bold text-navy mb-6 border-b border-softCream pb-4 flex items-center gap-2">
+                    <i data-lucide="settings" class="w-6 h-6"></i> Pengaturan Notifikasi & Gateway
+                </h3>
+                <form id="form-settings" onsubmit="App.saveSettings(event)">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label class="block text-sm font-semibold text-navy mb-2">Notifikasi Email</label>
+                            <select id="set-email-enabled" class="input-field">
+                                <option value="TRUE">Aktif</option>
+                                <option value="FALSE">Nonaktif</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-navy mb-2">Email Admin</label>
+                            <input type="email" id="set-email-admin" class="input-field">
+                        </div>
+                    </div>
+
+                    <div class="border-t border-softCream pt-6 mb-6">
+                        <h4 class="font-bold text-navy mb-4 flex items-center gap-2"><i data-lucide="message-circle" class="w-5 h-5 text-green-500"></i> Pengaturan WhatsApp</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-navy mb-2">Notifikasi WhatsApp</label>
+                                <select id="set-wa-enabled" class="input-field">
+                                    <option value="TRUE">Aktif</option>
+                                    <option value="FALSE">Nonaktif</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-navy mb-2">Provider WA Gateway</label>
+                                <select id="set-wa-provider" class="input-field">
+                                    <option value="fonnte">Fonnte</option>
+                                    <option value="waplus">Waplus</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="p-4 bg-pastelBlue/10 rounded-lg border border-pastelBlue/30">
+                                <label class="block text-sm font-bold text-navy mb-2">Fonnte Token</label>
+                                <input type="text" id="set-fonnte-token" class="input-field mb-2 text-xs" placeholder="Token Fonnte">
+                            </div>
+                            <div class="p-4 bg-peach/10 rounded-lg border border-peach/30">
+                                <label class="block text-sm font-bold text-navy mb-2">Waplus Token</label>
+                                <input type="text" id="set-waplus-token" class="input-field mb-2 text-xs" placeholder="Token Waplus">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-center mt-8 border-t border-softCream pt-6">
+                        <div class="flex gap-2">
+                            <button type="button" onclick="App.testEmail()" class="px-4 py-2 bg-gray-100 text-darkText rounded-lg text-sm font-medium hover:bg-gray-200 border border-gray-300">Test Email</button>
+                            <button type="button" onclick="App.testWA()" class="px-4 py-2 bg-green-50 text-green-700 rounded-lg text-sm font-medium hover:bg-green-100 border border-green-200">Test WhatsApp</button>
+                        </div>
+                        <button type="submit" class="btn-primary">Simpan Pengaturan</button>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <!-- VIEW: MEMBER DASHBOARD -->
+    <div id="view-member" class="view-section hidden-view min-h-screen bg-cream flex flex-col md:flex-row">
+        <!-- Sidebar -->
+        <aside class="w-full md:w-64 bg-white border-r border-softCream p-6 flex flex-col h-auto md:min-h-screen">
+            <div class="flex items-center gap-2 mb-10">
+                <div class="w-8 h-8 bg-softGold rounded-lg flex items-center justify-center text-white font-bold text-sm">iK</div>
+                <span class="text-xl font-bold text-navy">Ruang<span class="text-softGold">Anggota</span></span>
+            </div>
+            <nav class="flex-grow space-y-2">
+                <a href="#" class="flex items-center gap-3 p-3 rounded-lg bg-softCream text-navy font-semibold"><i data-lucide="home" class="w-5 h-5"></i> Beranda Saya</a>
+                <a href="#" class="flex items-center gap-3 p-3 rounded-lg text-darkText hover:bg-cream hover:text-navy transition"><i data-lucide="wallet" class="w-5 h-5"></i> Simpanan</a>
+                <a href="#" class="flex items-center gap-3 p-3 rounded-lg text-darkText hover:bg-cream hover:text-navy transition"><i data-lucide="file-text" class="w-5 h-5"></i> Pinjaman</a>
+            </nav>
+            <div class="mt-auto pt-6 border-t border-softCream">
+                <button onclick="App.logout()" class="flex items-center gap-3 p-3 w-full rounded-lg text-red-500 hover:bg-red-50 transition font-medium">
+                    <i data-lucide="log-out" class="w-5 h-5"></i> Keluar
+                </button>
+            </div>
+        </aside>
+        
+        <!-- Main Content Member -->
+        <main class="flex-grow p-6 md:p-10 w-full overflow-y-auto">
+            <header class="flex justify-between items-center mb-10">
+                <div>
+                    <h2 class="text-2xl font-bold text-navy" id="member-welcome">Halo, Anggota</h2>
+                    <p class="text-darkText" id="member-status-badge">Status: <span class="text-green-600 font-medium">Aktif</span></p>
+                </div>
+                <div class="flex gap-4">
+                    <button class="bg-white border border-softCream p-2 rounded-full text-navy shadow-sm relative">
+                        <i data-lucide="bell" class="w-6 h-6"></i>
+                        <span class="absolute top-0 right-0 w-3 h-3 bg-softCoral rounded-full border-2 border-white"></span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Wallet Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+                <div class="card bg-gradient-to-br from-navy to-slate-800 text-white relative overflow-hidden">
+                    <div class="absolute -right-10 -top-10 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
+                    <p class="text-white/80 font-medium mb-1">Total Saldo Simpanan</p>
+                    <h3 class="text-3xl font-bold mb-6" id="member-saldo">Rp 0</h3>
+                    <div class="flex gap-3">
+                        <button class="bg-white text-navy px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-softCream transition">+ Tambah Simpanan</button>
+                    </div>
+                </div>
+                <div class="card border border-softCoral/30 bg-white">
+                    <p class="text-darkText font-medium mb-1">Sisa Pinjaman Berjalan</p>
+                    <h3 class="text-3xl font-bold text-softCoral mb-6" id="member-pinjaman">Rp 0</h3>
+                    <div class="flex gap-3">
+                        <button class="btn-primary px-4 py-2 text-sm shadow-sm">Bayar Angsuran</button>
+                        <button class="bg-softCream text-navy px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-pastelBlue/50 transition">Ajukan Pinjaman</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History Table -->
+            <div class="card">
+                <h3 class="text-lg font-bold text-navy mb-4 border-b border-softCream pb-3">Riwayat Simpanan Terakhir</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-softCream text-sm text-darkText">
+                                <th class="pb-3 font-medium">Tanggal</th>
+                                <th class="pb-3 font-medium">Jenis</th>
+                                <th class="pb-3 font-medium">Nominal</th>
+                                <th class="pb-3 font-medium">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="member-table-simpanan" class="text-sm">
+                            <tr><td colspan="4" class="py-4 text-center text-gray-400">Belum ada data simpanan.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- MAIN APP LOGIC -->
+    <script>
+        // Inisialisasi Icons Lucide
+        lucide.createIcons();
+
+        const App = {
+            state: { user: null, token: null },
+
+            init: function() {
+                // Cek Session di LocalStorage
+                const sessionStr = localStorage.getItem('imers_session');
+                if (sessionStr) {
+                    try {
+                        const session = JSON.parse(sessionStr);
+                        this.state.user = session.user;
+                        this.state.token = session.token;
+                        
+                        if (session.user.role === 'admin') {
+                            this.navigate('view-admin');
+                            this.loadAdminDashboard();
+                        } else {
+                            this.navigate('view-member');
+                            this.loadMemberDashboard();
+                        }
+                    } catch(e) {
+                        this.navigate('view-landing');
+                    }
+                } else {
+                    this.navigate('view-landing');
+                }
+            },
+
+            navigate: function(viewId) {
+                document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden-view'));
+                document.getElementById(viewId).classList.remove('hidden-view');
+                if(viewId === 'view-admin') {
+                    document.getElementById('admin-dashboard-content').classList.remove('hidden-view');
+                    document.getElementById('admin-settings-content').classList.add('hidden-view');
+                }
+            },
+
+            showLoader: function(show) {
+                document.getElementById('loader').classList[show ? 'remove' : 'add']('hidden-view');
+            },
+
+            apiCall: async function(action, payload = {}) {
+                this.showLoader(true);
+                try {
+                    payload.action = action;
+                    if(this.state.token) payload.token = this.state.token;
+                    
+                    const response = await fetch(CONFIG.API_URL, {
+                        method: 'POST',
+                        body: JSON.stringify(payload),
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' } // GAS requirement
+                    });
+                    
+                    const result = await response.json();
+                    this.showLoader(false);
+                    return result;
+                } catch (error) {
+                    this.showLoader(false);
+                    this.showAlert("Error", "Gagal terhubung ke server.");
+                    return { success: false };
+                }
+            },
+
+            formatRupiah: function(angka) {
+                return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(angka || 0);
+            },
+
+            showAlert: function(title, message, isSuccess = false) {
+                document.getElementById('alert-title').innerText = title;
+                document.getElementById('alert-message').innerText = message;
+                const icon = document.getElementById('alert-icon');
+                icon.setAttribute('data-lucide', isSuccess ? 'check-circle' : 'alert-circle');
+                icon.className = `w-12 h-12 mx-auto mb-4 ${isSuccess ? 'text-green-500' : 'text-red-500'}`;
+                lucide.createIcons();
+                document.getElementById('alert-modal').classList.remove('hidden-view');
+            },
+
+            closeAlert: function() {
+                document.getElementById('alert-modal').classList.add('hidden-view');
+            },
+
+            handleLogin: async function(e) {
+                e.preventDefault();
+                const identifier = document.getElementById('login-identifier').value;
+                const password = document.getElementById('login-password').value;
+
+                const res = await this.apiCall('login', { identifier, password });
+                if (res.success) {
+                    this.state.user = res.data;
+                    this.state.token = res.data.token;
+                    localStorage.setItem('imers_session', JSON.stringify({ user: res.data, token: res.data.token }));
+                    
+                    if(res.data.role === 'admin') {
+                        this.navigate('view-admin');
+                        this.loadAdminDashboard();
+                    } else {
+                        this.navigate('view-member');
+                        this.loadMemberDashboard();
+                    }
+                } else {
+                    this.showAlert("Login Gagal", res.message);
+                }
+            },
+
+            logout: async function() {
+                if(this.state.token) {
+                    await this.apiCall('logout', {});
+                }
+                localStorage.removeItem('imers_session');
+                this.state.user = null;
+                this.state.token = null;
+                this.navigate('view-landing');
+            },
+
+            // --- ADMIN METHODS ---
+            loadAdminDashboard: async function() {
+                const res = await this.apiCall('getDashboardAdmin');
+                if(!res.success) {
+                    if(res.status === 401) this.logout();
+                    return;
+                }
+                
+                const data = res.data;
+                document.getElementById('admin-welcome').innerText = `Halo, ${data.profile.nama}`;
+                document.getElementById('admin-stat-anggota').innerText = data.stats.anggota_aktif;
+                document.getElementById('admin-stat-simpanan').innerText = this.formatRupiah(data.stats.total_simpanan);
+                document.getElementById('admin-stat-pinjaman').innerText = this.formatRupiah(data.stats.total_pinjaman_aktif);
+                document.getElementById('admin-stat-transaksi').innerText = '-'; // TBD
+
+                const tbAnggota = document.getElementById('admin-table-anggota');
+                tbAnggota.innerHTML = data.recent_members.length ? data.recent_members.map(m => `
+                    <tr class="border-b border-softCream/50 last:border-0 hover:bg-softCream/30">
+                        <td class="py-3">${m.nama}</td>
+                        <td class="py-3 text-darkText">${m.email}</td>
+                        <td class="py-3"><span class="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-bold">${m.status}</span></td>
+                    </tr>
+                `).join('') : `<tr><td colspan="3" class="py-4 text-center text-gray-400">Belum ada anggota.</td></tr>`;
+
+                const tbSimpanan = document.getElementById('admin-table-simpanan');
+                tbSimpanan.innerHTML = data.recent_simpanan.length ? data.recent_simpanan.map(s => `
+                    <tr class="border-b border-softCream/50 last:border-0 hover:bg-softCream/30">
+                        <td class="py-3 font-medium">${s.anggota_id}</td>
+                        <td class="py-3 text-darkText">${s.jenis_simpanan}</td>
+                        <td class="py-3 text-navy font-bold">${this.formatRupiah(s.nominal)}</td>
+                    </tr>
+                `).join('') : `<tr><td colspan="3" class="py-4 text-center text-gray-400">Belum ada simpanan.</td></tr>`;
+            },
+
+            showSettings: async function(e) {
+                e.preventDefault();
+                document.getElementById('admin-dashboard-content').classList.add('hidden-view');
+                document.getElementById('admin-settings-content').classList.remove('hidden-view');
+                
+                const res = await this.apiCall('getNotificationSettings');
+                if(res.success) {
+                    const s = res.data;
+                    document.getElementById('set-email-enabled').value = s.email_notification_enabled;
+                    document.getElementById('set-email-admin').value = s.email_admin || '';
+                    document.getElementById('set-wa-enabled').value = s.wa_notification_enabled;
+                    document.getElementById('set-wa-provider').value = s.wa_gateway_provider || 'fonnte';
+                    document.getElementById('set-fonnte-token').value = s.fonnte_token || '';
+                    document.getElementById('set-waplus-token').value = s.waplus_token || '';
+                }
+            },
+
+            saveSettings: async function(e) {
+                e.preventDefault();
+                const settings = {
+                    email_notification_enabled: document.getElementById('set-email-enabled').value,
+                    email_admin: document.getElementById('set-email-admin').value,
+                    wa_notification_enabled: document.getElementById('set-wa-enabled').value,
+                    wa_gateway_provider: document.getElementById('set-wa-provider').value,
+                    fonnte_token: document.getElementById('set-fonnte-token').value,
+                    waplus_token: document.getElementById('set-waplus-token').value
+                };
+
+                const res = await this.apiCall('updateNotificationSettings', { settings });
+                this.showAlert(res.success ? "Sukses" : "Gagal", res.message, res.success);
+            },
+
+            testEmail: async function() {
+                const email = prompt("Masukkan email tujuan test:");
+                if(!email) return;
+                const res = await this.apiCall('testEmailNotification', { email });
+                this.showAlert(res.success ? "Sukses" : "Gagal", res.message, res.success);
+            },
+
+            testWA: async function() {
+                const no_wa = prompt("Masukkan nomor WA tujuan (contoh: 0812...):");
+                if(!no_wa) return;
+                const res = await this.apiCall('testWhatsAppNotification', { no_wa });
+                this.showAlert(res.success ? "Sukses" : "Gagal", res.message, res.success);
+            },
+
+            // --- MEMBER METHODS ---
+            loadMemberDashboard: async function() {
+                const res = await this.apiCall('getDashboardAnggota');
+                if(!res.success) {
+                    if(res.status === 401) this.logout();
+                    return;
+                }
+                
+                const data = res.data;
+                document.getElementById('member-welcome').innerText = `Halo, ${data.profile.nama}`;
+                document.getElementById('member-saldo').innerText = this.formatRupiah(data.profile.saldo_simpanan);
+                document.getElementById('member-pinjaman').innerText = this.formatRupiah(data.profile.sisa_pinjaman);
+                
+                const tbSimpanan = document.getElementById('member-table-simpanan');
+                tbSimpanan.innerHTML = data.riwayat_simpanan.length ? data.riwayat_simpanan.map(s => `
+                    <tr class="border-b border-softCream/50 last:border-0 hover:bg-softCream/30">
+                        <td class="py-3">${new Date(s.tanggal).toLocaleDateString('id-ID')}</td>
+                        <td class="py-3 text-darkText">${s.jenis_simpanan}</td>
+                        <td class="py-3 font-bold">${this.formatRupiah(s.nominal)}</td>
+                        <td class="py-3"><span class="px-2 py-1 ${s.status==='Diterima'?'bg-green-100 text-green-700':(s.status==='Menunggu'?'bg-yellow-100 text-yellow-700':'bg-red-100 text-red-700')} rounded text-xs font-bold">${s.status}</span></td>
+                    </tr>
+                `).join('') : `<tr><td colspan="4" class="py-4 text-center text-gray-400">Belum ada transaksi.</td></tr>`;
+            }
+        };
+
+        // UI Helpers
+        const UI = {
+            closeAlert: () => App.closeAlert()
+        };
+
+        // Bootstrap App
+        document.addEventListener('DOMContentLoaded', () => {
+            App.init();
+        });
+    </script>
+</body>
+</html>
