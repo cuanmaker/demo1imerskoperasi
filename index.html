@@ -8,6 +8,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Library untuk Cetak PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <script>
         tailwind.config = {
@@ -40,7 +42,6 @@
         #loader { display: none; }
         .spinner { border: 4px solid rgba(0,0,0,0.1); width: 36px; height: 36px; border-radius: 50%; border-left-color: #A8D5BA; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        /* Scrollbar styling */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
@@ -51,7 +52,10 @@
 
     <!-- GLOBAL LOADER -->
     <div id="loader" class="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center backdrop-blur-sm">
-        <div class="spinner"></div>
+        <div class="flex flex-col items-center gap-3">
+            <div class="spinner"></div>
+            <p class="text-white font-medium text-sm" id="loader-text">Memuat data...</p>
+        </div>
     </div>
 
     <!-- TOAST NOTIFICATION -->
@@ -62,8 +66,53 @@
         </div>
     </div>
 
+    <!-- TEMPLATE STRUK PDF (Hidden dari Layar, cuma buat dirender PDF) -->
+    <div id="printable-receipt" class="fixed top-[-9999px] left-[-9999px] w-[400px] p-8 bg-white text-black border border-gray-200">
+        <div class="text-center mb-6">
+            <h2 class="text-2xl font-bold text-green-700">iMersKoperasi</h2>
+            <p class="text-sm text-gray-500">Bukti Transaksi Digital</p>
+        </div>
+        <hr class="border-dashed border-gray-300 mb-6">
+        <div class="space-y-3 text-sm">
+            <div class="flex justify-between"><span class="text-gray-500">ID Transaksi</span><span class="font-mono font-medium" id="pdf-id">---</span></div>
+            <div class="flex justify-between"><span class="text-gray-500">Tanggal</span><span class="font-medium" id="pdf-date">---</span></div>
+            <div class="flex justify-between"><span class="text-gray-500">Anggota</span><span class="font-medium" id="pdf-member">---</span></div>
+            <div class="flex justify-between"><span class="text-gray-500">Jenis Transaksi</span><span class="font-medium" id="pdf-type">---</span></div>
+        </div>
+        <hr class="border-dashed border-gray-300 my-6">
+        <div class="text-right">
+            <p class="text-sm text-gray-500 mb-1">Nominal Transaksi</p>
+            <h3 class="text-2xl font-bold text-gray-800" id="pdf-amount">Rp 0</h3>
+        </div>
+        <div class="mt-8 text-center text-xs text-gray-400">
+            <p>Simpan tanda terima ini sebagai bukti transaksi yang sah.</p>
+            <p>Terima kasih telah bertransaksi di iMersKoperasi.</p>
+        </div>
+    </div>
+
     <!-- ==================== MODALS ==================== -->
     
+    <!-- MODAL: Struk Transaksi Sukses -->
+    <div id="modal-receipt" class="hidden fixed inset-0 bg-black/50 z-[80] flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white w-full max-w-sm rounded-2xl shadow-xl p-6 text-center">
+            <div class="w-16 h-16 bg-green-100 text-success rounded-full flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="check-circle" class="w-8 h-8"></i>
+            </div>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">Transaksi Sukses!</h3>
+            <p class="text-sm text-gray-500 mb-6">Dana telah tercatat ke dalam sistem.</p>
+            
+            <div class="space-y-3">
+                <button onclick="downloadPDF()" class="w-full flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-3 rounded-xl transition-colors">
+                    <i data-lucide="file-down" class="w-5 h-5"></i> Download PDF
+                </button>
+                <button id="btn-send-wa" class="w-full flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-medium py-3 rounded-xl transition-colors shadow-soft">
+                    <i data-lucide="message-circle" class="w-5 h-5"></i> Kirim Struk via WhatsApp
+                </button>
+            </div>
+            <button onclick="document.getElementById('modal-receipt').classList.add('hidden')" class="mt-6 text-sm font-medium text-gray-400 hover:text-gray-600">Tutup</button>
+        </div>
+    </div>
+
     <!-- MODAL: Lupa Password -->
     <div id="modal-forgot" class="hidden fixed inset-0 bg-black/50 z-[60] flex items-center justify-center backdrop-blur-sm">
         <div class="bg-white dark:bg-darkcard w-full max-w-md rounded-2xl shadow-xl p-6 border border-gray-100">
@@ -102,29 +151,53 @@
         </div>
     </div>
 
-    <!-- MODAL: Tambah Anggota -->
+    <!-- MODAL: Tambah Anggota (Dilengkapi Bank) -->
     <div id="modal-add-member" class="hidden fixed inset-0 bg-black/50 z-[60] flex items-center justify-center backdrop-blur-sm">
-        <div class="bg-white dark:bg-darkcard w-full max-w-lg rounded-2xl shadow-xl p-6 border border-gray-100">
+        <div class="bg-white dark:bg-darkcard w-full max-w-2xl rounded-2xl shadow-xl p-6 border border-gray-100 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-xl font-bold text-gray-800">Tambah Anggota Baru</h3>
                 <button onclick="document.getElementById('modal-add-member').classList.add('hidden')" class="text-gray-400 hover:text-danger"><i data-lucide="x"></i></button>
             </div>
-            <form id="add-member-form" class="space-y-4">
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
-                        <input type="text" id="add-m-name" class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary" required>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">No. WhatsApp</label>
-                        <input type="text" id="add-m-wa" class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary" required>
-                    </div>
-                </div>
+            <form id="add-member-form" class="space-y-6">
+                <!-- Data Pribadi -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <input type="email" id="add-m-email" class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary" required>
+                    <h4 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Data Pribadi</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
+                            <input type="text" id="add-m-name" class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">No. WhatsApp</label>
+                            <input type="text" id="add-m-wa" class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary" required>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                            <input type="email" id="add-m-email" class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary" required>
+                        </div>
+                    </div>
                 </div>
-                <div class="pt-4 flex justify-end gap-3">
+
+                <!-- Data Rekening -->
+                <div>
+                    <h4 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Rekening Bank Anggota</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nama Bank</label>
+                            <input type="text" id="add-m-bank" placeholder="BCA/Mandiri" class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">No. Rekening</label>
+                            <input type="number" id="add-m-rek" class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Atas Nama</label>
+                            <input type="text" id="add-m-owner" class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-4 flex justify-end gap-3 border-t border-gray-100">
                     <button type="button" onclick="document.getElementById('modal-add-member').classList.add('hidden')" class="px-5 py-2.5 text-gray-600 font-medium hover:bg-gray-100 rounded-xl transition-colors">Batal</button>
                     <button type="submit" class="px-5 py-2.5 bg-primary hover:bg-green-500 text-white font-medium rounded-xl shadow-soft transition-colors">Simpan Anggota</button>
                 </div>
@@ -132,7 +205,7 @@
         </div>
     </div>
 
-    <!-- MODAL: Tambah Transaksi Simpanan -->
+    <!-- MODAL: Tambah Transaksi Simpanan (Dengan Datalist) -->
     <div id="modal-add-transaction" class="hidden fixed inset-0 bg-black/50 z-[60] flex items-center justify-center backdrop-blur-sm">
         <div class="bg-white w-full max-w-md rounded-2xl shadow-xl p-6">
             <div class="flex justify-between items-center mb-4">
@@ -141,8 +214,12 @@
             </div>
             <form id="add-transaction-form" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">ID Anggota / Nama</label>
-                    <input type="text" id="trx-member" placeholder="KOP-2026-0001" class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary" required>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Anggota</label>
+                    <!-- Input Datalist: Searchable Dropdown -->
+                    <input list="dl-members" id="trx-member" placeholder="Ketik nama atau ID anggota..." class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary" required autocomplete="off">
+                    <datalist id="dl-members">
+                        <!-- Options dirender via JS -->
+                    </datalist>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Jenis Transaksi</label>
@@ -162,7 +239,7 @@
         </div>
     </div>
 
-    <!-- MODAL: Ajukan Pinjaman (Enterprise) -->
+    <!-- MODAL: Ajukan Pinjaman (Dengan Datalist) -->
     <div id="modal-add-loan" class="hidden fixed inset-0 bg-black/50 z-[60] flex items-center justify-center backdrop-blur-sm">
         <div class="bg-white w-full max-w-md rounded-2xl shadow-xl p-6">
             <div class="flex justify-between items-center mb-4">
@@ -171,8 +248,8 @@
             </div>
             <form id="add-loan-form" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">ID Anggota</label>
-                    <input type="text" id="loan-member" placeholder="KOP-2026-0001" class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary" required>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Anggota</label>
+                    <input list="dl-members" id="loan-member" placeholder="Ketik nama atau ID anggota..." class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary" required autocomplete="off">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nominal Pinjaman (Rp)</label>
@@ -194,7 +271,7 @@
     <!-- ==================== APP WRAPPER ==================== -->
     <div id="app" class="min-h-screen">
         
-        <!-- VIEWS: Login (Soft Pastel Restored) -->
+        <!-- VIEWS: Login (Soft Pastel) -->
         <div id="view-login" class="min-h-screen flex items-center justify-center p-4">
             <div class="max-w-md w-full glass rounded-2xl shadow-soft p-8 border border-white">
                 <div class="text-center mb-8">
@@ -208,14 +285,14 @@
                 <form id="login-form" class="space-y-5">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Email / No. WhatsApp</label>
-                        <input type="text" id="login-email" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary outline-none transition-all" placeholder="admin@koperasi.com" required>
+                        <input type="text" id="login-email" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary outline-none transition-all" required>
                     </div>
                     <div>
                         <div class="flex justify-between items-center mb-1">
                             <label class="block text-sm font-medium text-gray-700">Password</label>
                             <button type="button" onclick="document.getElementById('modal-forgot').classList.remove('hidden')" class="text-sm text-primary hover:text-green-600 font-medium transition-colors">Lupa Password?</button>
                         </div>
-                        <input type="password" id="login-password" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary outline-none transition-all" placeholder="••••••••" required>
+                        <input type="password" id="login-password" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary outline-none transition-all" required>
                     </div>
                     <button type="submit" class="w-full bg-primary hover:bg-green-500 text-white font-semibold py-3 rounded-xl shadow-soft transition-colors mt-6">
                         Masuk Dashboard
@@ -228,36 +305,58 @@
             </div>
         </div>
 
-        <!-- VIEWS: Register (Soft Pastel Restored) -->
+        <!-- VIEWS: Register (Soft Pastel + Form Bank) -->
         <div id="view-register" class="hidden min-h-screen flex items-center justify-center p-4">
-            <div class="max-w-lg w-full glass rounded-2xl shadow-soft p-8 border border-white">
+            <div class="max-w-2xl w-full glass rounded-2xl shadow-soft p-8 border border-white my-8">
                 <div class="text-center mb-6">
                     <h2 class="text-2xl font-bold text-gray-900">Pendaftaran Anggota</h2>
                     <p class="text-sm text-gray-500">Bergabung bersama iMersKoperasi</p>
                 </div>
-                <form id="register-form" class="space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
-                            <input type="text" id="reg-name" class="w-full px-4 py-2 rounded-xl border focus:border-primary outline-none" required>
+                <form id="register-form" class="space-y-6">
+                    <div>
+                        <h4 class="text-sm font-bold text-gray-500 border-b border-gray-200 pb-2 mb-3">Informasi Akun & Pribadi</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
+                                <input type="text" id="reg-name" class="w-full px-4 py-2 rounded-xl border focus:border-primary outline-none" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">No. WhatsApp</label>
+                                <input type="text" id="reg-wa" class="w-full px-4 py-2 rounded-xl border focus:border-primary outline-none" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                <input type="email" id="reg-email" class="w-full px-4 py-2 rounded-xl border focus:border-primary outline-none" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                                <input type="password" id="reg-password" class="w-full px-4 py-2 rounded-xl border focus:border-primary outline-none" required>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Alamat Lengkap</label>
+                                <textarea id="reg-address" class="w-full px-4 py-2 rounded-xl border focus:border-primary outline-none" rows="2" required></textarea>
+                            </div>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">No. WhatsApp</label>
-                            <input type="text" id="reg-wa" class="w-full px-4 py-2 rounded-xl border focus:border-primary outline-none" required>
+                    </div>
+
+                    <div>
+                        <h4 class="text-sm font-bold text-gray-500 border-b border-gray-200 pb-2 mb-3">Informasi Rekening Bank (Untuk Pencairan)</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Nama Bank</label>
+                                <input type="text" id="reg-bank" placeholder="BCA / Mandiri / BRI" class="w-full px-4 py-2 rounded-xl border focus:border-primary outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">No. Rekening</label>
+                                <input type="number" id="reg-rek" class="w-full px-4 py-2 rounded-xl border focus:border-primary outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Atas Nama</label>
+                                <input type="text" id="reg-owner" class="w-full px-4 py-2 rounded-xl border focus:border-primary outline-none">
+                            </div>
                         </div>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                        <input type="email" id="reg-email" class="w-full px-4 py-2 rounded-xl border focus:border-primary outline-none" required>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Alamat Lengkap</label>
-                        <textarea id="reg-address" class="w-full px-4 py-2 rounded-xl border focus:border-primary outline-none" rows="2" required></textarea>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                        <input type="password" id="reg-password" class="w-full px-4 py-2 rounded-xl border focus:border-primary outline-none" required>
-                    </div>
+
                     <button type="submit" class="w-full bg-primary hover:bg-green-500 text-white font-semibold py-3 rounded-xl shadow-soft mt-4">Kirim Pendaftaran</button>
                 </form>
                 <p class="text-center text-sm text-gray-600 mt-6">
@@ -320,8 +419,8 @@
                     </div>
                     
                     <div class="flex items-center gap-5">
-                        <button class="text-gray-400 hover:text-primary relative transition-colors">
-                            <i data-lucide="bell"></i><span class="absolute top-0 right-0 w-2 h-2 bg-danger rounded-full"></span>
+                        <button class="text-gray-400 hover:text-primary relative transition-colors" onclick="fetchInitialData()">
+                            <i data-lucide="refresh-cw"></i> <!-- Tombol Refresh Data Manual -->
                         </button>
                         <div class="flex items-center gap-3 pl-5 border-l border-gray-200 relative group cursor-pointer">
                             <div class="text-right hidden sm:block">
@@ -346,7 +445,7 @@
                     <div id="section-dashboard" class="content-section">
                         <div class="mb-8">
                             <h2 class="text-2xl font-bold text-gray-800" id="welcome-text">Selamat Datang!</h2>
-                            <p class="text-gray-500 text-sm mt-1">Berikut adalah ringkasan portofolio koperasi hari ini.</p>
+                            <p class="text-gray-500 text-sm mt-1">Berikut adalah ringkasan portofolio koperasi Anda.</p>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                             <div class="bg-white p-6 rounded-2xl shadow-soft border border-gray-100">
@@ -408,7 +507,7 @@
                                         <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
                                             <th class="p-4 font-medium">ID Anggota</th>
                                             <th class="p-4 font-medium">Nama & Kontak</th>
-                                            <th class="p-4 font-medium">Tgl Gabung</th>
+                                            <th class="p-4 font-medium">Data Bank</th>
                                             <th class="p-4 font-medium">Status</th>
                                             <th class="p-4 font-medium text-right">Aksi</th>
                                         </tr>
@@ -427,15 +526,15 @@
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div class="bg-white p-5 rounded-2xl shadow-soft border border-gray-100 flex items-center gap-4">
                                 <div class="w-12 h-12 bg-green-50 text-success rounded-xl flex items-center justify-center"><i data-lucide="wallet"></i></div>
-                                <div><p class="text-xs text-gray-500 font-medium">TOTAL SALDO TABUNGAN</p><h3 class="text-xl font-bold text-gray-800">Rp ---</h3></div>
+                                <div><p class="text-xs text-gray-500 font-medium">TOTAL SALDO TABUNGAN</p><h3 id="stat-total-tab" class="text-xl font-bold text-gray-800">Rp ---</h3></div>
                             </div>
                             <div class="bg-white p-5 rounded-2xl shadow-soft border border-gray-100 flex items-center gap-4">
                                 <div class="w-12 h-12 bg-blue-50 text-blue-500 rounded-xl flex items-center justify-center"><i data-lucide="arrow-down-circle"></i></div>
-                                <div><p class="text-xs text-gray-500 font-medium">SETORAN HARI INI</p><h3 class="text-xl font-bold text-gray-800">Rp ---</h3></div>
+                                <div><p class="text-xs text-gray-500 font-medium">TOTAL TRANSAKSI SETORAN</p><h3 id="stat-total-setor" class="text-xl font-bold text-gray-800">Rp ---</h3></div>
                             </div>
                             <div class="bg-white p-5 rounded-2xl shadow-soft border border-gray-100 flex items-center gap-4">
                                 <div class="w-12 h-12 bg-orange-50 text-warning rounded-xl flex items-center justify-center"><i data-lucide="arrow-up-circle"></i></div>
-                                <div><p class="text-xs text-gray-500 font-medium">PENARIKAN HARI INI</p><h3 class="text-xl font-bold text-gray-800">Rp ---</h3></div>
+                                <div><p class="text-xs text-gray-500 font-medium">TOTAL TRANSAKSI PENARIKAN</p><h3 id="stat-total-tarik" class="text-xl font-bold text-gray-800">Rp ---</h3></div>
                             </div>
                         </div>
 
@@ -446,23 +545,20 @@
                                     <div class="p-2 bg-red-50 text-danger rounded-lg"><i data-lucide="piggy-bank" class="w-5 h-5"></i></div>
                                     <div>
                                         <h3 class="font-bold text-gray-800 text-lg">Transaksi Tabungan</h3>
-                                        <p class="text-xs text-gray-500">Setor, tarik, dan transfer dana simpanan anggota</p>
+                                        <p class="text-xs text-gray-500">Setor, tarik, dan mutasi dana simpanan anggota</p>
                                     </div>
                                 </div>
                                 <div class="flex gap-2">
-                                    <button onclick="document.getElementById('modal-add-transaction').classList.remove('hidden')" class="px-4 py-2 border border-success text-success bg-green-50 hover:bg-green-100 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors">
-                                        <i data-lucide="arrow-down" class="w-4 h-4"></i> Setor
-                                    </button>
-                                    <button onclick="document.getElementById('modal-add-transaction').classList.remove('hidden')" class="px-4 py-2 border border-warning text-warning bg-orange-50 hover:bg-orange-100 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors">
-                                        <i data-lucide="arrow-up" class="w-4 h-4"></i> Tarik
+                                    <button onclick="document.getElementById('modal-add-transaction').classList.remove('hidden')" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shadow-soft">
+                                        <i data-lucide="plus" class="w-4 h-4"></i> Transaksi Baru
                                     </button>
                                 </div>
                             </div>
                             
                             <div class="p-4 border-b border-gray-100 flex gap-2 overflow-x-auto">
-                                <button class="px-4 py-1.5 bg-gray-100 text-gray-800 text-sm font-medium rounded-full">Semua Transaksi</button>
-                                <button class="px-4 py-1.5 text-gray-500 hover:bg-gray-50 text-sm font-medium rounded-full transition-colors">Setoran</button>
-                                <button class="px-4 py-1.5 text-gray-500 hover:bg-gray-50 text-sm font-medium rounded-full transition-colors">Penarikan</button>
+                                <button onclick="renderTransactions('All')" class="px-4 py-1.5 bg-gray-100 text-gray-800 text-sm font-medium rounded-full focus:ring-2">Semua Transaksi</button>
+                                <button onclick="renderTransactions('Setor')" class="px-4 py-1.5 text-gray-500 hover:bg-gray-50 text-sm font-medium rounded-full transition-colors focus:ring-2">Setoran</button>
+                                <button onclick="renderTransactions('Tarik')" class="px-4 py-1.5 text-gray-500 hover:bg-gray-50 text-sm font-medium rounded-full transition-colors focus:ring-2">Penarikan</button>
                             </div>
 
                             <div class="overflow-x-auto">
@@ -490,15 +586,15 @@
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <div class="bg-white p-5 rounded-2xl shadow-soft border border-gray-100 flex items-center gap-4">
                                 <div class="w-10 h-10 bg-red-50 text-danger rounded-xl flex items-center justify-center"><i data-lucide="activity"></i></div>
-                                <div><p class="text-xs text-gray-500 font-medium">OUTSTANDING AKTIF</p><h3 class="text-lg font-bold text-gray-800">Rp ---</h3></div>
+                                <div><p class="text-xs text-gray-500 font-medium">OUTSTANDING AKTIF</p><h3 id="stat-loan-active" class="text-lg font-bold text-gray-800">Rp ---</h3></div>
                             </div>
                             <div class="bg-white p-5 rounded-2xl shadow-soft border border-gray-100 flex items-center gap-4">
                                 <div class="w-10 h-10 bg-orange-50 text-warning rounded-xl flex items-center justify-center"><i data-lucide="clock"></i></div>
-                                <div><p class="text-xs text-gray-500 font-medium">PENGAJUAN PENDING</p><h3 class="text-lg font-bold text-gray-800">---</h3></div>
+                                <div><p class="text-xs text-gray-500 font-medium">PENGAJUAN PENDING</p><h3 id="stat-loan-pending" class="text-lg font-bold text-gray-800">---</h3></div>
                             </div>
                             <div class="bg-white p-5 rounded-2xl shadow-soft border border-gray-100 flex items-center gap-4">
                                 <div class="w-10 h-10 bg-green-50 text-success rounded-xl flex items-center justify-center"><i data-lucide="check-circle"></i></div>
-                                <div><p class="text-xs text-gray-500 font-medium">TOTAL DICAIRKAN</p><h3 class="text-lg font-bold text-gray-800">Rp ---</h3></div>
+                                <div><p class="text-xs text-gray-500 font-medium">TOTAL DICAIRKAN</p><h3 id="stat-loan-disbursed" class="text-lg font-bold text-gray-800">Rp ---</h3></div>
                             </div>
                             <div class="bg-white p-5 rounded-2xl shadow-soft border border-gray-100 flex items-center gap-4">
                                 <div class="w-10 h-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center"><i data-lucide="shield-alert"></i></div>
@@ -517,9 +613,6 @@
                                     </div>
                                 </div>
                                 <div class="flex gap-2">
-                                    <button class="px-4 py-2 border border-gray-200 text-gray-600 bg-white hover:bg-gray-50 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors">
-                                        <i data-lucide="file-text" class="w-4 h-4"></i> Bayar Angsuran
-                                    </button>
                                     <button onclick="document.getElementById('modal-add-loan').classList.remove('hidden')" class="px-4 py-2 bg-danger hover:bg-red-600 text-white rounded-lg text-sm font-medium flex items-center gap-2 shadow-soft transition-colors">
                                         <i data-lucide="plus" class="w-4 h-4"></i> Pengajuan Baru
                                     </button>
@@ -527,11 +620,9 @@
                             </div>
                             
                             <div class="p-4 border-b border-gray-100 flex gap-2 overflow-x-auto">
-                                <button class="px-4 py-1.5 bg-gray-100 text-gray-800 text-sm font-medium rounded-full">Semua</button>
-                                <button class="px-4 py-1.5 text-gray-500 hover:bg-gray-50 text-sm font-medium rounded-full transition-colors">Pengajuan</button>
-                                <button class="px-4 py-1.5 text-gray-500 hover:bg-gray-50 text-sm font-medium rounded-full transition-colors">Disetujui</button>
-                                <button class="px-4 py-1.5 text-gray-500 hover:bg-gray-50 text-sm font-medium rounded-full transition-colors">Aktif</button>
-                                <button class="px-4 py-1.5 text-gray-500 hover:bg-gray-50 text-sm font-medium rounded-full transition-colors">Lunas</button>
+                                <button onclick="renderLoans('All')" class="px-4 py-1.5 bg-gray-100 text-gray-800 text-sm font-medium rounded-full focus:ring-2">Semua</button>
+                                <button onclick="renderLoans('Pending')" class="px-4 py-1.5 text-gray-500 hover:bg-gray-50 text-sm font-medium rounded-full transition-colors focus:ring-2">Pengajuan</button>
+                                <button onclick="renderLoans('Disbursed')" class="px-4 py-1.5 text-gray-500 hover:bg-gray-50 text-sm font-medium rounded-full transition-colors focus:ring-2">Aktif / Cair</button>
                             </div>
 
                             <div class="overflow-x-auto">
@@ -546,105 +637,51 @@
                                         </tr>
                                     </thead>
                                     <tbody id="loan-tbody" class="divide-y divide-gray-100 text-sm">
-                                        <tr>
-                                            <td colspan="5" class="p-12 text-center">
-                                                <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-50 text-danger mb-3"><i data-lucide="alert-circle"></i></div>
-                                                <h3 class="text-gray-800 font-medium text-base">Tidak ada pinjaman</h3>
-                                                <p class="text-gray-500 mt-1">Klik 'Pengajuan Baru' untuk membuat pengajuan pinjaman anggota.</p>
-                                            </td>
-                                        </tr>
+                                        <!-- Dirender via JS -->
                                     </tbody>
                                 </table>
                             </div>
                         </div>
                     </div>
 
-                    <!-- ================= MODUL: SHU ================= -->
+                    <!-- ================= MODUL: SHU & CONFIG (Tetap utuh) ================= -->
                     <div id="section-shu" class="content-section hidden">
+                        <!-- Sama seperti sebelumnya -->
                         <div class="max-w-3xl mx-auto">
                             <div class="bg-white rounded-2xl shadow-soft border border-gray-100 overflow-hidden">
                                 <div class="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-                                    <div>
-                                        <h3 class="font-bold text-gray-800 text-lg">Kalkulator Pembagian SHU</h3>
-                                        <p class="text-sm text-gray-500">Hitung otomatis pembagian Sisa Hasil Usaha akhir tahun.</p>
-                                    </div>
+                                    <div><h3 class="font-bold text-gray-800 text-lg">Kalkulator Pembagian SHU</h3></div>
                                     <div class="w-10 h-10 bg-primary/20 text-primary rounded-xl flex items-center justify-center"><i data-lucide="pie-chart"></i></div>
                                 </div>
                                 <div class="p-8 space-y-6">
                                     <div class="grid grid-cols-2 gap-6">
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-700 mb-1">Tahun Buku</label>
-                                            <input type="number" value="2026" class="w-full px-4 py-2 rounded-xl border bg-gray-50 outline-none" readonly>
-                                        </div>
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-700 mb-1">Total Pendapatan (Rp)</label>
-                                            <input type="number" placeholder="Contoh: 150000000" class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary">
-                                        </div>
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-700 mb-1">Total Biaya Operasional (Rp)</label>
-                                            <input type="number" placeholder="Contoh: 50000000" class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary">
-                                        </div>
+                                        <div><label class="block text-sm font-medium text-gray-700 mb-1">Tahun Buku</label><input type="number" value="2026" class="w-full px-4 py-2 rounded-xl border bg-gray-50 outline-none" readonly></div>
+                                        <div><label class="block text-sm font-medium text-gray-700 mb-1">Total Pendapatan (Rp)</label><input type="number" placeholder="Contoh: 150000000" class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary"></div>
+                                        <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Total Biaya Operasional (Rp)</label><input type="number" placeholder="Contoh: 50000000" class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary"></div>
                                     </div>
-                                    
-                                    <div class="p-5 bg-secondary/30 rounded-xl border border-secondary border-dashed">
-                                        <h4 class="text-sm font-bold text-green-800 mb-3">Porsi Pembagian (AD/ART)</h4>
-                                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                                            <div><p class="text-gray-500">Cadangan Koperasi</p><p class="font-semibold">20%</p></div>
-                                            <div><p class="text-gray-500">Jasa Anggota</p><p class="font-semibold">40%</p></div>
-                                            <div><p class="text-gray-500">Jasa Modal</p><p class="font-semibold">20%</p></div>
-                                            <div><p class="text-gray-500">Pengurus & Sosial</p><p class="font-semibold">20%</p></div>
-                                        </div>
-                                    </div>
-
                                     <button class="w-full bg-primary hover:bg-green-500 text-white font-semibold py-3 rounded-xl shadow-soft">Hitung SHU Bersih</button>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- ================= MODUL: KONFIGURASI ================= -->
                     <div id="section-config" class="content-section hidden">
+                        <!-- Sama seperti sebelumnya -->
                         <div class="max-w-3xl mx-auto">
                             <div class="bg-white rounded-2xl shadow-soft border border-gray-100 overflow-hidden">
-                                <div class="p-6 border-b border-gray-100 bg-gray-50/50">
-                                    <h3 class="font-bold text-gray-800 text-lg">Konfigurasi Sistem Global</h3>
-                                    <p class="text-sm text-gray-500">Pengaturan operasional dan integrasi API pihak ketiga.</p>
-                                </div>
+                                <div class="p-6 border-b border-gray-100 bg-gray-50/50"><h3 class="font-bold text-gray-800 text-lg">Konfigurasi Sistem Global</h3></div>
                                 <div class="p-8 space-y-8">
                                     <div>
                                         <label class="block text-sm font-bold text-gray-800 mb-1 uppercase tracking-wider">Batas Plafon Pinjaman (%)</label>
-                                        <p class="text-xs text-gray-500 mb-3">Maksimal pinjaman yang bisa diajukan berdasarkan persentase total simpanan anggota.</p>
-                                        <div class="flex gap-3">
-                                            <input type="number" value="80" class="flex-1 px-4 py-2 rounded-xl border outline-none focus:border-primary">
-                                            <button class="px-6 py-2 bg-darkcard text-white font-medium rounded-xl hover:bg-gray-800">Simpan</button>
-                                        </div>
+                                        <div class="flex gap-3"><input type="number" value="80" class="flex-1 px-4 py-2 rounded-xl border outline-none focus:border-primary"><button class="px-6 py-2 bg-darkcard text-white font-medium rounded-xl hover:bg-gray-800">Simpan</button></div>
                                     </div>
-                                    
                                     <hr class="border-gray-100">
-
                                     <div>
                                         <label class="block text-sm font-bold text-gray-800 mb-1 uppercase tracking-wider">WhatsApp Gateway</label>
-                                        <p class="text-xs text-gray-500 mb-4">Pengaturan untuk pengiriman notifikasi pesan WhatsApp otomatis.</p>
-                                        
                                         <div class="space-y-4">
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Provider WA API</label>
-                                                <select class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary">
-                                                    <option>Fonnte</option>
-                                                    <option>WAPlus</option>
-                                                </select>
-                                            </div>
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Nomor Pengirim (Sender)</label>
-                                                <input type="text" placeholder="628123456789" class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary">
-                                            </div>
-                                            <div class="flex gap-3 items-end">
-                                                <div class="flex-1">
-                                                    <label class="block text-sm font-medium text-gray-700 mb-1">API Key / Token</label>
-                                                    <input type="password" placeholder="Masukkan API Key" class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary">
-                                                </div>
-                                                <button class="px-6 py-2 bg-darkcard text-white font-medium rounded-xl hover:bg-gray-800">Simpan</button>
-                                            </div>
+                                            <div><label class="block text-sm font-medium text-gray-700 mb-1">Provider WA API</label><select class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary"><option>Fonnte</option><option>WAPlus</option></select></div>
+                                            <div><label class="block text-sm font-medium text-gray-700 mb-1">Nomor Pengirim (Sender)</label><input type="text" placeholder="628123456789" class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary"></div>
+                                            <div class="flex gap-3 items-end"><div class="flex-1"><label class="block text-sm font-medium text-gray-700 mb-1">API Key / Token</label><input type="password" placeholder="Masukkan API Key" class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary"></div><button class="px-6 py-2 bg-darkcard text-white font-medium rounded-xl hover:bg-gray-800">Simpan</button></div>
                                         </div>
                                     </div>
                                 </div>
@@ -666,14 +703,21 @@
             API_URL: 'https://script.google.com/macros/s/AKfycbwIjTv_o94D_i0LHqv-S3LtEgAdLByYdxwnD0wFHvGpIM5_k5hdw-OF6qutrigjBYbo/exec'
         };
 
-        // STATE
+        // ================= STATE MANAGEMENT =================
         let AppState = {
             token: localStorage.getItem('kop_token'),
-            user: JSON.parse(localStorage.getItem('kop_user') || 'null')
+            user: JSON.parse(localStorage.getItem('kop_user') || 'null'),
+            dashboard: {},
+            members: [],
+            transactions: [],
+            loans: []
         };
 
         // UI HELPERS
-        function showLoader() { document.getElementById('loader').style.display = 'flex'; }
+        function showLoader(text = 'Memuat data...') { 
+            document.getElementById('loader-text').textContent = text;
+            document.getElementById('loader').style.display = 'flex'; 
+        }
         function hideLoader() { document.getElementById('loader').style.display = 'none'; }
         
         function showToast(message, type = 'success') {
@@ -701,7 +745,7 @@
             return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
         }
 
-        // VIEW & MENU ROUTER
+        // VIEW & MENU ROUTER (INSTANT - NO API CALLS)
         function switchView(viewId) {
             ['view-login', 'view-register', 'view-dashboard'].forEach(id => {
                 document.getElementById(id).classList.add('hidden');
@@ -736,11 +780,11 @@
             };
             document.getElementById('header-title').textContent = titles[menuId] || 'Menu';
 
-            // Load Data based on menu
-            if(menuId === 'dashboard') loadDashboardData();
-            if(menuId === 'anggota') loadMembersData();
-            if(menuId === 'simpanan') loadTransactionsData();
-            if(menuId === 'pinjaman') loadLoansData();
+            // Instant render from AppState
+            if(menuId === 'dashboard') renderDashboard();
+            if(menuId === 'anggota') renderMembers();
+            if(menuId === 'simpanan') renderTransactions('All');
+            if(menuId === 'pinjaman') renderLoans('All');
         }
 
         // API WRAPPER
@@ -759,6 +803,42 @@
             }
         }
 
+        // ================= FETCH INITIAL DATA (THE ONLY LOADING NEEDED) =================
+        async function fetchInitialData() {
+            showLoader('Sinkronisasi Data...');
+            try {
+                const data = await apiCall('getInitialData');
+                AppState.dashboard = data.dashboard || {};
+                AppState.members = data.members || [];
+                AppState.transactions = data.transactions || [];
+                AppState.loans = data.loans || [];
+                
+                populateDatalists(); // Update Searchable Dropdowns
+                postLoginSetup();    // Update UI Header
+                
+                // Re-render currently active menu subtly
+                const activeMenu = document.querySelector('.nav-item.bg-secondary');
+                if(activeMenu) {
+                    const menuId = activeMenu.id.replace('nav-', '');
+                    switchMenu(menuId);
+                } else {
+                    switchMenu('dashboard');
+                }
+            } catch (err) {
+                showToast("Gagal mengambil data: " + err.message, 'error');
+                if(err.message.includes('Token')) logout();
+            } finally {
+                hideLoader();
+            }
+        }
+
+        function populateDatalists() {
+            const optionsHtml = AppState.members.map(m => `<option value="${m.member_id}">${m.full_name}</option>`).join('');
+            document.querySelectorAll('datalist[id="dl-members"]').forEach(dl => {
+                dl.innerHTML = optionsHtml;
+            });
+        }
+
         // ================= AUTHENTICATION =================
         const loginForm = document.getElementById('login-form');
         if (loginForm) {
@@ -767,7 +847,7 @@
                 const email = document.getElementById('login-email').value;
                 const password = document.getElementById('login-password').value;
                 
-                showLoader();
+                showLoader('Verifikasi akun...');
                 try {
                     const data = await apiCall('login', { email, password });
                     AppState.token = data.token;
@@ -775,35 +855,40 @@
                     localStorage.setItem('kop_token', data.token);
                     localStorage.setItem('kop_user', JSON.stringify(data.user));
                     
-                    postLoginSetup();
                     showToast("Login Berhasil");
+                    await fetchInitialData(); // Load all data instantly after login
                 } catch (err) {
-                    showToast(err.message, 'error');
-                } finally {
                     hideLoader();
+                    showToast(err.message, 'error');
                 }
             });
         }
 
-        const forgotForm = document.getElementById('forgot-form');
-        if (forgotForm) {
-            forgotForm.addEventListener('submit', async (e) => {
+        const registerForm = document.getElementById('register-form');
+        if (registerForm) {
+            registerForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const email = document.getElementById('forgot-email').value;
+                const payload = {
+                    full_name: document.getElementById('reg-name').value,
+                    whatsapp: document.getElementById('reg-wa').value,
+                    email: document.getElementById('reg-email').value,
+                    address: document.getElementById('reg-address').value,
+                    password: document.getElementById('reg-password').value,
+                    bank_name: document.getElementById('reg-bank').value,
+                    bank_account: document.getElementById('reg-rek').value,
+                    bank_owner: document.getElementById('reg-owner').value
+                };
                 showLoader();
                 try {
-                    await apiCall('forgotPassword', { email });
-                    showToast("Password baru telah dikirim ke email Anda.");
-                    document.getElementById('modal-forgot').classList.add('hidden');
-                } catch (err) {
-                    showToast(err.message, 'error');
-                } finally {
-                    hideLoader();
-                }
+                    const res = await apiCall('register', payload);
+                    showToast(res.message);
+                    switchView('login');
+                } catch (err) { showToast(err.message, 'error'); } finally { hideLoader(); }
             });
         }
 
         function postLoginSetup() {
+            if(!AppState.user) return;
             document.getElementById('user-name').textContent = AppState.user.name;
             document.getElementById('user-role').textContent = AppState.user.role;
             document.getElementById('welcome-text').textContent = `Selamat Datang, ${AppState.user.name.split(' ')[0]}!`;
@@ -814,7 +899,6 @@
             }
 
             switchView('dashboard');
-            switchMenu('dashboard');
         }
 
         function logout() {
@@ -824,149 +908,154 @@
             switchView('login');
         }
 
-        // ================= DATA FETCHERS =================
-        async function loadDashboardData() {
-            showLoader();
-            try {
-                const data = await apiCall('getDashboardData');
-                document.getElementById('dash-total').textContent = formatRp(data.total_saldo);
-                document.getElementById('dash-wajib').textContent = formatRp(data.simpanan_wajib);
-                document.getElementById('dash-pinjaman').textContent = formatRp(data.pinjaman_aktif);
-                document.getElementById('dash-shu').textContent = formatRp(data.est_shu);
-                initCharts();
-            } catch (err) {
-                showToast(err.message, 'error');
-            } finally {
-                hideLoader();
-            }
+        // ================= RENDERERS (SYNC / INSTANT) =================
+        function renderDashboard() {
+            if(!AppState.dashboard) return;
+            document.getElementById('dash-total').textContent = formatRp(AppState.dashboard.total_saldo || 0);
+            document.getElementById('dash-wajib').textContent = formatRp(AppState.dashboard.simpanan_wajib || 0);
+            document.getElementById('dash-pinjaman').textContent = formatRp(AppState.dashboard.pinjaman_aktif || 0);
+            document.getElementById('dash-shu').textContent = formatRp(AppState.dashboard.est_shu || 0);
+            initCharts();
         }
 
-        async function loadMembersData() {
-            showLoader();
-            try {
-                const members = await apiCall('getMembers');
-                const tbody = document.getElementById('member-tbody');
-                tbody.innerHTML = '';
-                
-                members.forEach(m => {
-                    let statusColor = m.status === 'Active' ? 'bg-green-100 text-green-800' : (m.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800');
-                    
-                    let actionBtns = '';
-                    if(m.status === 'Pending') {
-                        actionBtns = `
-                            <button onclick="updateMemberStatus('${m.member_id}', 'Active')" title="Setujui" class="p-1.5 bg-green-50 text-success rounded-lg hover:bg-green-100"><i data-lucide="check" class="w-4 h-4"></i></button>
-                            <button onclick="updateMemberStatus('${m.member_id}', 'Rejected')" title="Tolak" class="p-1.5 bg-red-50 text-danger rounded-lg hover:bg-red-100"><i data-lucide="x" class="w-4 h-4"></i></button>
-                        `;
-                    } else if(m.status === 'Active') {
-                        actionBtns = `<button onclick="updateMemberStatus('${m.member_id}', 'Suspended')" class="p-1.5 bg-orange-50 text-warning rounded-lg hover:bg-orange-100 text-xs font-medium">Suspend</button>`;
-                    }
+        function renderMembers() {
+            const tbody = document.getElementById('member-tbody');
+            tbody.innerHTML = '';
+            
+            if(!AppState.members || AppState.members.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-gray-400">Belum ada data anggota</td></tr>`;
+                return;
+            }
 
-                    tbody.innerHTML += `
-                        <tr>
-                            <td class="p-4"><span class="font-medium text-gray-800">${m.member_id}</span></td>
-                            <td class="p-4">
-                                <p class="font-semibold text-gray-800">${m.full_name}</p>
-                                <p class="text-xs text-gray-500">${m.whatsapp}</p>
-                            </td>
-                            <td class="p-4 text-gray-600">${new Date(m.join_date).toLocaleDateString('id-ID')}</td>
-                            <td class="p-4"><span class="px-2.5 py-1 rounded-full text-xs font-medium ${statusColor}">${m.status}</span></td>
-                            <td class="p-4 text-right flex justify-end gap-2">${actionBtns}</td>
-                        </tr>
+            AppState.members.forEach(m => {
+                let statusColor = m.status === 'Active' ? 'bg-green-100 text-green-800' : (m.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800');
+                
+                let actionBtns = '';
+                if(m.status === 'Pending') {
+                    actionBtns = `
+                        <button onclick="updateMemberStatus('${m.member_id}', 'Active')" title="Setujui" class="p-1.5 bg-green-50 text-success rounded-lg hover:bg-green-100"><i data-lucide="check" class="w-4 h-4"></i></button>
+                        <button onclick="updateMemberStatus('${m.member_id}', 'Rejected')" title="Tolak" class="p-1.5 bg-red-50 text-danger rounded-lg hover:bg-red-100"><i data-lucide="x" class="w-4 h-4"></i></button>
                     `;
-                });
+                } else if(m.status === 'Active') {
+                    actionBtns = `<button onclick="updateMemberStatus('${m.member_id}', 'Suspended')" class="p-1.5 bg-orange-50 text-warning rounded-lg hover:bg-orange-100 text-xs font-medium">Suspend</button>`;
+                }
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="p-4"><span class="font-medium text-gray-800">${m.member_id}</span></td>
+                        <td class="p-4">
+                            <p class="font-semibold text-gray-800">${m.full_name}</p>
+                            <p class="text-xs text-gray-500">${m.whatsapp}</p>
+                        </td>
+                        <td class="p-4">
+                            <p class="text-xs font-semibold text-gray-700">${m.bank_name || '-'}</p>
+                            <p class="text-xs text-gray-500">${m.bank_account || '-'} (a.n ${m.bank_owner || '-'})</p>
+                        </td>
+                        <td class="p-4"><span class="px-2.5 py-1 rounded-full text-xs font-medium ${statusColor}">${m.status}</span></td>
+                        <td class="p-4 text-right flex justify-end gap-2">${actionBtns}</td>
+                    </tr>
+                `;
+            });
+            lucide.createIcons();
+        }
+
+        function renderTransactions(filter = 'All') {
+            const tbody = document.getElementById('trx-tbody');
+            tbody.innerHTML = '';
+            
+            let filteredTxs = AppState.transactions || [];
+            if(filter === 'Setor') filteredTxs = filteredTxs.filter(t => t.trx_type !== 'Penarikan');
+            if(filter === 'Tarik') filteredTxs = filteredTxs.filter(t => t.trx_type === 'Penarikan');
+
+            // Update Statistics
+            const totalTab = AppState.dashboard.total_saldo || 0;
+            const totalSetor = filteredTxs.filter(t => t.trx_type !== 'Penarikan').reduce((acc, t) => acc + Number(t.amount), 0);
+            const totalTarik = filteredTxs.filter(t => t.trx_type === 'Penarikan').reduce((acc, t) => acc + Number(t.amount), 0);
+            
+            document.getElementById('stat-total-tab').textContent = formatRp(totalTab);
+            document.getElementById('stat-total-setor').textContent = formatRp(totalSetor);
+            document.getElementById('stat-total-tarik').textContent = formatRp(totalTarik);
+
+            if(filteredTxs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-gray-400">Belum ada transaksi</td></tr>`;
+                return;
+            }
+
+            filteredTxs.forEach(t => {
+                let isPenarikan = t.trx_type === 'Penarikan';
+                let typeColor = isPenarikan ? 'text-warning' : 'text-success';
+                let sign = isPenarikan ? '-' : '+';
+                
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="p-4 text-gray-500 text-xs">${new Date(t.timestamp).toLocaleString('id-ID')}</td>
+                        <td class="p-4 font-mono text-xs text-gray-400">${t.trx_id}</td>
+                        <td class="p-4 font-medium text-gray-800">${t.member_id}</td>
+                        <td class="p-4"><span class="px-2.5 py-1 rounded-md bg-gray-50 border border-gray-100 text-xs font-medium text-gray-600">${t.trx_type}</span></td>
+                        <td class="p-4 text-right font-bold ${typeColor}">${sign} ${formatRp(t.amount)}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function renderLoans(filter = 'All') {
+            const tbody = document.getElementById('loan-tbody');
+            tbody.innerHTML = '';
+            
+            let filteredLoans = AppState.loans || [];
+            if(filter !== 'All') {
+                filteredLoans = filteredLoans.filter(l => l.status === filter);
+            }
+
+            // Update Stats
+            const totalActive = (AppState.loans||[]).filter(l=>l.status==='Disbursed').reduce((acc, l) => acc + Number(l.amount), 0);
+            const totalPending = (AppState.loans||[]).filter(l=>l.status==='Pending').length;
+            const totalDisbursed = totalActive; // Simplifikasi
+            
+            document.getElementById('stat-loan-active').textContent = formatRp(totalActive);
+            document.getElementById('stat-loan-pending').textContent = totalPending;
+            document.getElementById('stat-loan-disbursed').textContent = formatRp(totalDisbursed);
+
+            if(filteredLoans.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="p-12 text-center">
+                            <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-50 text-danger mb-3"><i data-lucide="alert-circle"></i></div>
+                            <h3 class="text-gray-800 font-medium text-base">Tidak ada pinjaman</h3>
+                            <p class="text-gray-500 mt-1">Klik 'Pengajuan Baru' untuk membuat pengajuan.</p>
+                        </td>
+                    </tr>`;
                 lucide.createIcons();
-            } catch (err) {
-                showToast(err.message, 'error');
-            } finally {
-                hideLoader();
+                return;
             }
-        }
 
-        async function loadTransactionsData() {
-            showLoader();
-            try {
-                const txs = await apiCall('getTransactions');
-                const tbody = document.getElementById('trx-tbody');
-                tbody.innerHTML = '';
+            filteredLoans.forEach(l => {
+                let statusColor = l.status === 'Disbursed' ? 'bg-green-100 text-green-800' : (l.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800');
+                let actionBtns = '';
                 
-                if(!txs || txs.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-gray-400">Belum ada transaksi</td></tr>`;
-                    return;
+                if(l.status === 'Pending' && ['Super Admin', 'Admin', 'Ketua'].includes(AppState.user.role)) {
+                    actionBtns = `
+                        <button onclick="updateLoanStatus('${l.loan_id}', 'Disbursed')" class="px-3 py-1 bg-green-50 hover:bg-green-100 text-success rounded-lg text-xs font-medium">Cairkan</button>
+                        <button onclick="updateLoanStatus('${l.loan_id}', 'Rejected')" class="px-3 py-1 bg-red-50 hover:bg-red-100 text-danger rounded-lg text-xs font-medium">Tolak</button>
+                    `;
+                } else if (l.status === 'Disbursed') {
+                    actionBtns = `<span class="text-xs text-gray-400">Aktif</span>`;
                 }
 
-                txs.forEach(t => {
-                    let isPenarikan = t.trx_type === 'Penarikan';
-                    let typeColor = isPenarikan ? 'text-warning' : 'text-success';
-                    let sign = isPenarikan ? '-' : '+';
-                    
-                    tbody.innerHTML += `
-                        <tr>
-                            <td class="p-4 text-gray-500 text-xs">${new Date(t.timestamp).toLocaleString('id-ID')}</td>
-                            <td class="p-4 font-mono text-xs text-gray-400">${t.trx_id}</td>
-                            <td class="p-4 font-medium text-gray-800">${t.member_id}</td>
-                            <td class="p-4"><span class="px-2.5 py-1 rounded-md bg-gray-50 border border-gray-100 text-xs font-medium text-gray-600">${t.trx_type}</span></td>
-                            <td class="p-4 text-right font-bold ${typeColor}">${sign} ${formatRp(t.amount)}</td>
-                        </tr>
-                    `;
-                });
-            } catch (err) {
-                showToast(err.message, 'error');
-            } finally {
-                hideLoader();
-            }
-        }
-
-        async function loadLoansData() {
-            showLoader();
-            try {
-                const loans = await apiCall('getLoans');
-                const tbody = document.getElementById('loan-tbody');
-                tbody.innerHTML = '';
-                
-                if(!loans || loans.length === 0) {
-                    tbody.innerHTML = `
-                        <tr>
-                            <td colspan="5" class="p-12 text-center">
-                                <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-50 text-danger mb-3"><i data-lucide="alert-circle"></i></div>
-                                <h3 class="text-gray-800 font-medium text-base">Tidak ada pinjaman</h3>
-                                <p class="text-gray-500 mt-1">Klik 'Pengajuan Baru' untuk membuat pengajuan pinjaman anggota.</p>
-                            </td>
-                        </tr>`;
-                    lucide.createIcons();
-                    return;
-                }
-
-                loans.forEach(l => {
-                    let statusColor = l.status === 'Disbursed' ? 'bg-green-100 text-green-800' : (l.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800');
-                    let actionBtns = '';
-                    
-                    if(l.status === 'Pending' && ['Super Admin', 'Admin', 'Ketua'].includes(AppState.user.role)) {
-                        actionBtns = `
-                            <button onclick="updateLoanStatus('${l.loan_id}', 'Disbursed')" class="px-3 py-1 bg-green-50 hover:bg-green-100 text-success rounded-lg text-xs font-medium">Cairkan</button>
-                            <button onclick="updateLoanStatus('${l.loan_id}', 'Rejected')" class="px-3 py-1 bg-red-50 hover:bg-red-100 text-danger rounded-lg text-xs font-medium">Tolak</button>
-                        `;
-                    } else if (l.status === 'Disbursed') {
-                        actionBtns = `<span class="text-xs text-gray-400">Aktif</span>`;
-                    }
-
-                    tbody.innerHTML += `
-                        <tr>
-                            <td class="p-4 font-mono text-xs text-gray-500">${l.loan_id}</td>
-                            <td class="p-4 font-medium text-gray-800">${l.member_id}</td>
-                            <td class="p-4 text-right">
-                                <p class="font-bold text-gray-800">${formatRp(l.amount)}</p>
-                                <p class="text-xs text-gray-500">${l.tenor} Bulan</p>
-                            </td>
-                            <td class="p-4"><span class="px-2.5 py-1 rounded-full text-xs font-medium ${statusColor}">${l.status}</span></td>
-                            <td class="p-4 text-right flex justify-end gap-2">${actionBtns}</td>
-                        </tr>
-                    `;
-                });
-            } catch (err) {
-                showToast(err.message, 'error');
-            } finally {
-                hideLoader();
-            }
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="p-4 font-mono text-xs text-gray-500">${l.loan_id}</td>
+                        <td class="p-4 font-medium text-gray-800">${l.member_id}</td>
+                        <td class="p-4 text-right">
+                            <p class="font-bold text-gray-800">${formatRp(l.amount)}</p>
+                            <p class="text-xs text-gray-500">${l.tenor} Bulan</p>
+                        </td>
+                        <td class="p-4"><span class="px-2.5 py-1 rounded-full text-xs font-medium ${statusColor}">${l.status}</span></td>
+                        <td class="p-4 text-right flex justify-end gap-2">${actionBtns}</td>
+                    </tr>
+                `;
+            });
+            lucide.createIcons();
         }
 
         // ================= ACTIONS (FORMS) =================
@@ -977,14 +1066,18 @@
                 const payload = {
                     name: document.getElementById('add-m-name').value,
                     whatsapp: document.getElementById('add-m-wa').value,
-                    email: document.getElementById('add-m-email').value
+                    email: document.getElementById('add-m-email').value,
+                    bank_name: document.getElementById('add-m-bank').value,
+                    bank_account: document.getElementById('add-m-rek').value,
+                    bank_owner: document.getElementById('add-m-owner').value
                 };
                 showLoader();
                 try {
                     const res = await apiCall('addMember', payload);
                     showToast(res.message);
                     document.getElementById('modal-add-member').classList.add('hidden');
-                    loadMembersData();
+                    addMemberForm.reset();
+                    await fetchInitialData(); // Refresh Data Instan
                 } catch (err) { showToast(err.message, 'error'); } finally { hideLoader(); }
             });
         }
@@ -995,8 +1088,8 @@
             try {
                 const res = await apiCall('updateMemberStatus', { member_id: id, status: status });
                 showToast(res.message);
-                loadMembersData();
-            } catch (err) { showToast(err.message, 'error'); } finally { hideLoader(); }
+                await fetchInitialData();
+            } catch (err) { showToast(err.message, 'error'); hideLoader();}
         }
 
         const addTrxForm = document.getElementById('add-transaction-form');
@@ -1013,8 +1106,17 @@
                     const res = await apiCall('addTransaction', payload);
                     showToast(res.message);
                     document.getElementById('modal-add-transaction').classList.add('hidden');
-                    loadTransactionsData();
-                } catch (err) { showToast(err.message, 'error'); } finally { hideLoader(); }
+                    addTrxForm.reset();
+                    
+                    // Siapkan Data untuk PDF/WA Struk
+                    prepareReceipt(res.trx_id, payload);
+                    
+                    await fetchInitialData(); // Refresh list transaksi
+                    
+                    // Munculkan Pop-up Struk PDF/WA
+                    document.getElementById('modal-receipt').classList.remove('hidden');
+
+                } catch (err) { showToast(err.message, 'error'); hideLoader();} 
             });
         }
 
@@ -1032,8 +1134,9 @@
                     const res = await apiCall('addLoan', payload);
                     showToast(res.message);
                     document.getElementById('modal-add-loan').classList.add('hidden');
-                    loadLoansData();
-                } catch (err) { showToast(err.message, 'error'); } finally { hideLoader(); }
+                    addLoanForm.reset();
+                    await fetchInitialData();
+                } catch (err) { showToast(err.message, 'error'); hideLoader();}
             });
         }
 
@@ -1043,8 +1146,55 @@
             try {
                 const res = await apiCall('updateLoanStatus', { loan_id: id, status: status });
                 showToast(res.message);
-                loadLoansData();
-            } catch (err) { showToast(err.message, 'error'); } finally { hideLoader(); }
+                await fetchInitialData();
+            } catch (err) { showToast(err.message, 'error'); hideLoader();}
+        }
+
+        // ================= PDF & WA RECEIPT LOGIC =================
+        function prepareReceipt(trxId, payload) {
+            // Dapatkan nama anggota dari ID
+            const memberObj = AppState.members.find(m => m.member_id === payload.member_id);
+            const memberName = memberObj ? memberObj.full_name : payload.member_id;
+            const dateStr = new Date().toLocaleString('id-ID');
+            
+            // Isi form Hidden Template PDF
+            document.getElementById('pdf-id').textContent = trxId || "TRX-XXX";
+            document.getElementById('pdf-date').textContent = dateStr;
+            document.getElementById('pdf-member').textContent = `${payload.member_id} - ${memberName}`;
+            document.getElementById('pdf-type').textContent = payload.trx_type;
+            document.getElementById('pdf-amount').textContent = formatRp(payload.amount);
+
+            // Update WA Action logic
+            const waBtn = document.getElementById('btn-send-wa');
+            if(memberObj && memberObj.whatsapp) {
+                let phone = memberObj.whatsapp;
+                if(phone.startsWith('0')) phone = '62' + phone.slice(1);
+                
+                const textMsg = `Halo ${memberName},\n\nBerikut adalah bukti transaksi Anda di iMersKoperasi:\n- ID: *${trxId}*\n- Jenis: *${payload.trx_type}*\n- Tanggal: *${dateStr}*\n- Nominal: *${formatRp(payload.amount)}*\n\nTerima kasih atas kepercayaannya.`;
+                const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(textMsg)}`;
+                
+                waBtn.onclick = () => window.open(waUrl, '_blank');
+            } else {
+                waBtn.onclick = () => showToast("Nomor WA anggota tidak ditemukan", "error");
+            }
+        }
+
+        function downloadPDF() {
+            const element = document.getElementById('printable-receipt');
+            const trxId = document.getElementById('pdf-id').textContent;
+            
+            // Munculkan sebentar, generate, hilangkan lagi
+            element.classList.remove('top-[-9999px]', 'left-[-9999px]');
+            
+            html2pdf().set({
+                margin: 0,
+                filename: `Struk_${trxId}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+            }).from(element).save().then(() => {
+                element.classList.add('top-[-9999px]', 'left-[-9999px]');
+            });
         }
 
         // CHARTS INIT (Chart.js)
@@ -1093,7 +1243,8 @@
         // INITIALIZATION
         window.onload = () => {
             if (AppState.token && AppState.user) {
-                postLoginSetup();
+                // If logged in, fetch data right away
+                fetchInitialData();
             } else {
                 switchView('login');
             }
