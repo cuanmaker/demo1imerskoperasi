@@ -508,18 +508,6 @@
             
             showLoader();
             try {
-                // Mock Mode (Akan berjalan jika URL GAS belum diganti)
-                if (CONFIG.API_URL.includes('GANTI_DENGAN_URL_GAS_ANDA')) {
-                    setTimeout(() => {
-                        AppState.token = "mock_token";
-                        AppState.user = { name: "Budi Santoso", role: "Ketua", member_id: "KOP-2026-0001" };
-                        postLoginSetup();
-                        hideLoader();
-                        showToast("Login Berhasil (Mock Mode)");
-                    }, 800);
-                    return;
-                }
-
                 const data = await apiCall('login', { email, password });
                 AppState.token = data.token;
                 AppState.user = data.user;
@@ -562,10 +550,6 @@
             showLoader();
             try {
                 const email = document.getElementById('forgot-email').value;
-                if (CONFIG.API_URL.includes('GANTI_DENGAN_URL')) {
-                    setTimeout(() => { hideLoader(); showToast("Reset link terkirim (Mock Mode)"); switchView('login'); }, 800);
-                    return;
-                }
                 const res = await apiCall('forgotPassword', { email });
                 showToast(res.message);
                 switchView('login');
@@ -578,10 +562,6 @@
             try {
                 const oldPassword = document.getElementById('cp-old').value;
                 const newPassword = document.getElementById('cp-new').value;
-                if (CONFIG.API_URL.includes('GANTI_DENGAN_URL')) {
-                    setTimeout(() => { hideLoader(); showToast("Password diubah (Mock Mode)"); togglePasswordModal(); }, 800);
-                    return;
-                }
                 const res = await apiCall('changePassword', { oldPassword, newPassword });
                 showToast(res.message);
                 togglePasswordModal();
@@ -600,16 +580,10 @@
         // DASHBOARD DATA FETCHING
         async function loadDashboardData() {
             try {
-                if (CONFIG.API_URL.includes('GANTI_DENGAN_URL_GAS_ANDA')) {
-                    document.getElementById('dash-total').textContent = formatRp(14500000);
-                    document.getElementById('dash-wajib').textContent = formatRp(2500000);
-                    document.getElementById('dash-pinjaman').textContent = formatRp(1000000);
-                } else {
-                    const data = await apiCall('getDashboardData');
-                    document.getElementById('dash-total').textContent = formatRp(data.total_saldo);
-                    document.getElementById('dash-wajib').textContent = formatRp(data.simpanan_wajib);
-                    document.getElementById('dash-pinjaman').textContent = formatRp(data.pinjaman_aktif);
-                }
+                const data = await apiCall('getDashboardData');
+                document.getElementById('dash-total').textContent = formatRp(data.total_saldo);
+                document.getElementById('dash-wajib').textContent = formatRp(data.simpanan_wajib);
+                document.getElementById('dash-pinjaman').textContent = formatRp(data.pinjaman_aktif);
             } catch (err) {
                 console.error(err);
                 showToast("Gagal memuat data", "error");
