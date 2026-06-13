@@ -8,7 +8,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Library untuk Cetak PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <script>
@@ -27,8 +26,13 @@
                         darkbg: '#1A202C',
                         darkcard: '#2D3748'
                     },
-                    borderRadius: { 'xl': '1rem', '2xl': '1.5rem' },
-                    boxShadow: { 'soft': '0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01)' }
+                    borderRadius: { 
+                        'xl': '1rem', 
+                        '2xl': '1.5rem' 
+                    },
+                    boxShadow: { 
+                        'soft': '0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01)' 
+                    }
                 }
             }
         }
@@ -36,16 +40,47 @@
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #F9FBFA; }
-        .glass { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); }
-        .dark .glass { background: rgba(45, 55, 72, 0.7); backdrop-filter: blur(10px); }
-        #loader { display: none; }
-        .spinner { border: 4px solid rgba(0,0,0,0.1); width: 36px; height: 36px; border-radius: 50%; border-left-color: #A8D5BA; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #F9FBFA; 
+        }
+        .glass { 
+            background: rgba(255, 255, 255, 0.7); 
+            backdrop-filter: blur(10px); 
+        }
+        .dark .glass { 
+            background: rgba(45, 55, 72, 0.7); 
+            backdrop-filter: blur(10px); 
+        }
+        #loader { 
+            display: none; 
+        }
+        .spinner { 
+            border: 4px solid rgba(0,0,0,0.1); 
+            width: 36px; 
+            height: 36px; 
+            border-radius: 50%; 
+            border-left-color: #A8D5BA; 
+            animation: spin 1s linear infinite; 
+        }
+        @keyframes spin { 
+            0% { transform: rotate(0deg); } 
+            100% { transform: rotate(360deg); } 
+        }
+        ::-webkit-scrollbar { 
+            width: 6px; 
+            height: 6px; 
+        }
+        ::-webkit-scrollbar-track { 
+            background: transparent; 
+        }
+        ::-webkit-scrollbar-thumb { 
+            background: #cbd5e1; 
+            border-radius: 10px; 
+        }
+        ::-webkit-scrollbar-thumb:hover { 
+            background: #94a3b8; 
+        }
     </style>
 </head>
 <body class="text-gray-800 dark:text-gray-200 transition-colors duration-300">
@@ -66,6 +101,25 @@
         </div>
     </div>
 
+    <!-- CUSTOM CONFIRM MODAL (Pengganti confirm() bawaan) -->
+    <div id="modal-confirm" class="hidden fixed inset-0 bg-black/50 z-[99] flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white w-full max-w-sm rounded-2xl shadow-xl p-6 text-center border border-gray-100">
+            <div class="w-16 h-16 bg-orange-100 text-warning rounded-full flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="help-circle" class="w-8 h-8"></i>
+            </div>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">Konfirmasi Tindakan</h3>
+            <p id="confirm-msg" class="text-sm text-gray-500 mb-6">Apakah Anda yakin ingin melanjutkan?</p>
+            <div class="flex gap-3">
+                <button id="btn-confirm-cancel" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-3 rounded-xl transition-colors">
+                    Batal
+                </button>
+                <button id="btn-confirm-ok" class="flex-1 bg-primary hover:bg-green-500 text-white font-medium py-3 rounded-xl shadow-soft transition-colors">
+                    Ya, Lanjut
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- TEMPLATE STRUK PDF (Hidden dari Layar, cuma buat dirender PDF) -->
     <div id="printable-receipt" class="fixed top-[-9999px] left-[-9999px] w-[400px] p-8 bg-white text-black border border-gray-200">
         <div class="text-center mb-6">
@@ -74,10 +128,22 @@
         </div>
         <hr class="border-dashed border-gray-300 mb-6">
         <div class="space-y-3 text-sm">
-            <div class="flex justify-between"><span class="text-gray-500">ID Transaksi</span><span class="font-mono font-medium" id="pdf-id">---</span></div>
-            <div class="flex justify-between"><span class="text-gray-500">Tanggal</span><span class="font-medium" id="pdf-date">---</span></div>
-            <div class="flex justify-between"><span class="text-gray-500">Anggota</span><span class="font-medium" id="pdf-member">---</span></div>
-            <div class="flex justify-between"><span class="text-gray-500">Keterangan</span><span class="font-medium" id="pdf-type">---</span></div>
+            <div class="flex justify-between">
+                <span class="text-gray-500">ID Transaksi</span>
+                <span class="font-mono font-medium" id="pdf-id">---</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-gray-500">Tanggal</span>
+                <span class="font-medium" id="pdf-date">---</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-gray-500">Anggota</span>
+                <span class="font-medium" id="pdf-member">---</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-gray-500">Keterangan</span>
+                <span class="font-medium" id="pdf-type">---</span>
+            </div>
         </div>
         <hr class="border-dashed border-gray-300 my-6">
         <div class="text-right">
@@ -90,8 +156,6 @@
         </div>
     </div>
 
-    <!-- ==================== MODALS ==================== -->
-    
     <!-- MODAL: Struk Transaksi Sukses -->
     <div id="modal-receipt" class="hidden fixed inset-0 bg-black/50 z-[80] flex items-center justify-center backdrop-blur-sm">
         <div class="bg-white w-full max-w-sm rounded-2xl shadow-xl p-6 text-center">
@@ -100,7 +164,6 @@
             </div>
             <h3 class="text-xl font-bold text-gray-800 mb-2">Transaksi Sukses!</h3>
             <p class="text-sm text-gray-500 mb-6">Tindakan berhasil dicatat ke dalam sistem.</p>
-            
             <div class="space-y-3">
                 <button onclick="downloadPDF()" class="w-full flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-3 rounded-xl transition-colors">
                     <i data-lucide="file-down" class="w-5 h-5"></i> Download PDF
@@ -109,33 +172,41 @@
                     <i data-lucide="message-circle" class="w-5 h-5"></i> Kirim Struk via WhatsApp
                 </button>
             </div>
-            <button onclick="document.getElementById('modal-receipt').classList.add('hidden')" class="mt-6 text-sm font-medium text-gray-400 hover:text-gray-600">Tutup</button>
+            <button onclick="document.getElementById('modal-receipt').classList.add('hidden')" class="mt-6 text-sm font-medium text-gray-400 hover:text-gray-600">
+                Tutup
+            </button>
         </div>
     </div>
 
     <!-- MODAL: Lupa Password -->
     <div id="modal-forgot" class="hidden fixed inset-0 bg-black/50 z-[60] flex items-center justify-center backdrop-blur-sm">
-        <div class="bg-white dark:bg-darkcard w-full max-w-md rounded-2xl shadow-xl p-6 border border-gray-100">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-xl p-6 border border-gray-100">
             <div class="flex justify-between items-center mb-6">
-                <h3 class="text-xl font-bold text-gray-800 dark:text-white">Reset Password</h3>
-                <button onclick="document.getElementById('modal-forgot').classList.add('hidden')" class="text-gray-400 hover:text-danger"><i data-lucide="x"></i></button>
+                <h3 class="text-xl font-bold text-gray-800">Reset Password</h3>
+                <button onclick="document.getElementById('modal-forgot').classList.add('hidden')" class="text-gray-400 hover:text-danger">
+                    <i data-lucide="x"></i>
+                </button>
             </div>
             <form id="forgot-form" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email Terdaftar</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Email Terdaftar</label>
                     <input type="email" id="forgot-email" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary outline-none transition-all" required>
                 </div>
-                <button type="submit" class="w-full bg-primary hover:bg-green-500 text-white font-semibold py-3 rounded-xl transition-colors mt-2">Kirim Link Reset</button>
+                <button type="submit" class="w-full bg-primary hover:bg-green-500 text-white font-semibold py-3 rounded-xl transition-colors mt-2">
+                    Kirim Link Reset / Password Baru
+                </button>
             </form>
         </div>
     </div>
-
+    
     <!-- MODAL: Ganti Password -->
     <div id="modal-change-pass" class="hidden fixed inset-0 bg-black/50 z-[60] flex items-center justify-center backdrop-blur-sm">
         <div class="bg-white dark:bg-darkcard w-full max-w-md rounded-2xl shadow-xl p-6">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-lg font-bold text-gray-800 dark:text-white">Ganti Password</h3>
-                <button onclick="document.getElementById('modal-change-pass').classList.add('hidden')" class="text-gray-400 hover:text-danger"><i data-lucide="x"></i></button>
+                <button onclick="document.getElementById('modal-change-pass').classList.add('hidden')" class="text-gray-400 hover:text-danger">
+                    <i data-lucide="x"></i>
+                </button>
             </div>
             <form id="change-pass-form" class="space-y-4">
                 <div>
@@ -146,20 +217,23 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">Password Baru</label>
                     <input type="password" id="cp-new" class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary" required>
                 </div>
-                <button type="submit" class="w-full bg-primary hover:bg-green-400 text-white font-semibold py-2.5 rounded-xl transition-colors">Simpan Perubahan</button>
+                <button type="submit" class="w-full bg-primary hover:bg-green-400 text-white font-semibold py-2.5 rounded-xl transition-colors">
+                    Simpan Perubahan
+                </button>
             </form>
         </div>
     </div>
 
-    <!-- MODAL: Tambah Anggota (Dilengkapi Bank) -->
+    <!-- MODAL: Tambah Anggota -->
     <div id="modal-add-member" class="hidden fixed inset-0 bg-black/50 z-[60] flex items-center justify-center backdrop-blur-sm">
-        <div class="bg-white dark:bg-darkcard w-full max-w-2xl rounded-2xl shadow-xl p-6 border border-gray-100 max-h-[90vh] overflow-y-auto">
+        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl p-6 border border-gray-100 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-xl font-bold text-gray-800">Tambah Anggota Baru</h3>
-                <button onclick="document.getElementById('modal-add-member').classList.add('hidden')" class="text-gray-400 hover:text-danger"><i data-lucide="x"></i></button>
+                <button onclick="document.getElementById('modal-add-member').classList.add('hidden')" class="text-gray-400 hover:text-danger">
+                    <i data-lucide="x"></i>
+                </button>
             </div>
             <form id="add-member-form" class="space-y-6">
-                <!-- Data Pribadi -->
                 <div>
                     <h4 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Data Pribadi</h4>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -177,8 +251,6 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Data Rekening -->
                 <div>
                     <h4 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Rekening Bank Anggota</h4>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -196,29 +268,32 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="pt-4 flex justify-end gap-3 border-t border-gray-100">
-                    <button type="button" onclick="document.getElementById('modal-add-member').classList.add('hidden')" class="px-5 py-2.5 text-gray-600 font-medium hover:bg-gray-100 rounded-xl transition-colors">Batal</button>
-                    <button type="submit" class="px-5 py-2.5 bg-primary hover:bg-green-500 text-white font-medium rounded-xl shadow-soft transition-colors">Simpan Anggota</button>
+                    <button type="button" onclick="document.getElementById('modal-add-member').classList.add('hidden')" class="px-5 py-2.5 text-gray-600 font-medium hover:bg-gray-100 rounded-xl transition-colors">
+                        Batal
+                    </button>
+                    <button type="submit" class="px-5 py-2.5 bg-primary hover:bg-green-500 text-white font-medium rounded-xl shadow-soft transition-colors">
+                        Simpan Anggota
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- MODAL: Tambah Transaksi Simpanan (Dengan Datalist) -->
+    <!-- MODAL: Tambah Transaksi Simpanan -->
     <div id="modal-add-transaction" class="hidden fixed inset-0 bg-black/50 z-[60] flex items-center justify-center backdrop-blur-sm">
         <div class="bg-white w-full max-w-md rounded-2xl shadow-xl p-6">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-lg font-bold text-gray-800">Setor / Tarik Tunai</h3>
-                <button onclick="document.getElementById('modal-add-transaction').classList.add('hidden')" class="text-gray-400 hover:text-danger"><i data-lucide="x"></i></button>
+                <button onclick="document.getElementById('modal-add-transaction').classList.add('hidden')" class="text-gray-400 hover:text-danger">
+                    <i data-lucide="x"></i>
+                </button>
             </div>
             <form id="add-transaction-form" class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Anggota</label>
-                    <input list="dl-members" id="trx-member" placeholder="Ketik nama atau ID anggota..." class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary" required autocomplete="off">
-                    <datalist id="dl-members">
-                        <!-- Options dirender via JS -->
-                    </datalist>
+                    <input list="dl-members" id="trx-member" placeholder="Ketik nama atau ID..." class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary" required autocomplete="off">
+                    <datalist id="dl-members"></datalist>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Jenis Transaksi</label>
@@ -233,27 +308,31 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nominal (Rp)</label>
                     <input type="number" id="trx-amount" placeholder="50000" class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary" required>
                 </div>
-                <button type="submit" class="w-full bg-primary hover:bg-green-500 text-white font-semibold py-2.5 rounded-xl mt-4 shadow-soft">Proses Transaksi</button>
+                <button type="submit" class="w-full bg-primary hover:bg-green-500 text-white font-semibold py-2.5 rounded-xl mt-4 shadow-soft">
+                    Proses Transaksi
+                </button>
             </form>
         </div>
     </div>
 
-    <!-- MODAL: Ajukan Pinjaman (Dengan Datalist & Produk) -->
+    <!-- MODAL: Ajukan Pinjaman (Dengan Data Produk) -->
     <div id="modal-add-loan" class="hidden fixed inset-0 bg-black/50 z-[60] flex items-center justify-center backdrop-blur-sm">
         <div class="bg-white w-full max-w-md rounded-2xl shadow-xl p-6">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-lg font-bold text-gray-800">Pengajuan Pinjaman Baru</h3>
-                <button onclick="document.getElementById('modal-add-loan').classList.add('hidden')" class="text-gray-400 hover:text-danger"><i data-lucide="x"></i></button>
+                <button onclick="document.getElementById('modal-add-loan').classList.add('hidden')" class="text-gray-400 hover:text-danger">
+                    <i data-lucide="x"></i>
+                </button>
             </div>
             <form id="add-loan-form" class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Anggota</label>
-                    <input list="dl-members" id="loan-member" placeholder="Ketik nama atau ID anggota..." class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary" required autocomplete="off">
+                    <input list="dl-members" id="loan-member" placeholder="Ketik nama atau ID..." class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary" required autocomplete="off">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Produk Pinjaman</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Produk Pinjaman</label>
                     <select id="loan-product" class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary" required>
-                        <!-- Options dirender via JS dari AppState.products -->
+                        <!-- Dirender otomatis oleh JS dari Master Produk -->
                     </select>
                 </div>
                 <div>
@@ -269,17 +348,21 @@
                         <option value="24">24 Bulan</option>
                     </select>
                 </div>
-                <button type="submit" class="w-full bg-warning hover:bg-orange-500 text-white font-semibold py-2.5 rounded-xl mt-4 shadow-soft">Ajukan Pinjaman</button>
+                <button type="submit" class="w-full bg-warning hover:bg-orange-500 text-white font-semibold py-2.5 rounded-xl mt-4 shadow-soft">
+                    Ajukan Pinjaman
+                </button>
             </form>
         </div>
     </div>
 
-    <!-- MODAL: Bayar Angsuran Pinjaman -->
+    <!-- MODAL: Bayar Angsuran (Dengan Rekening Kas & Denda) -->
     <div id="modal-pay-installment" class="hidden fixed inset-0 bg-black/50 z-[60] flex items-center justify-center backdrop-blur-sm">
         <div class="bg-white w-full max-w-md rounded-2xl shadow-xl p-6">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-lg font-bold text-gray-800">Pembayaran Angsuran</h3>
-                <button onclick="document.getElementById('modal-pay-installment').classList.add('hidden')" class="text-gray-400 hover:text-danger"><i data-lucide="x"></i></button>
+                <button onclick="document.getElementById('modal-pay-installment').classList.add('hidden')" class="text-gray-400 hover:text-danger">
+                    <i data-lucide="x"></i>
+                </button>
             </div>
             <form id="pay-installment-form" class="space-y-4">
                 <div>
@@ -289,19 +372,21 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Metode Pembayaran (Masuk ke Kas)</label>
                     <select id="pay-method" class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary" required>
-                        <!-- Options dirender via JS dari AppState.coopAccounts -->
+                        <!-- Dirender otomatis oleh JS dari Rekening Koperasi -->
                         <option value="Kas Tunai">Kas Tunai</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Nominal Cicilan Pokok + Bunga (Rp)</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nominal Pokok + Bunga (Rp)</label>
                     <input type="number" id="pay-amount" placeholder="Misal: 500000" class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary" required>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Denda Keterlambatan (Rp) *Kosongkan jika tidak ada</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Denda Keterlambatan (Rp) *Opsional</label>
                     <input type="number" id="pay-fine" placeholder="0" class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary">
                 </div>
-                <button type="submit" class="w-full bg-success hover:bg-green-600 text-white font-semibold py-2.5 rounded-xl mt-4 shadow-soft">Proses Pembayaran</button>
+                <button type="submit" class="w-full bg-success hover:bg-green-600 text-white font-semibold py-2.5 rounded-xl mt-4 shadow-soft">
+                    Proses Pembayaran
+                </button>
             </form>
         </div>
     </div>
@@ -309,7 +394,7 @@
     <!-- ==================== APP WRAPPER ==================== -->
     <div id="app" class="min-h-screen">
         
-        <!-- VIEWS: Login (Soft Pastel Restored) -->
+        <!-- VIEWS: Login -->
         <div id="view-login" class="min-h-screen flex items-center justify-center p-4">
             <div class="max-w-md w-full glass rounded-2xl shadow-soft p-8 border border-white">
                 <div class="text-center mb-8">
@@ -319,83 +404,62 @@
                     <h1 class="text-3xl font-bold text-gray-900">iMersKoperasi</h1>
                     <p class="text-sm text-gray-500 mt-2">Koperasi Digital Modern</p>
                 </div>
-
                 <form id="login-form" class="space-y-5">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Email / No. WhatsApp</label>
-                        <input type="text" id="login-email" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary outline-none transition-all" placeholder="admin@koperasi.com" required>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                        <input type="email" id="login-email" class="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-primary outline-none transition-all" required>
                     </div>
                     <div>
                         <div class="flex justify-between items-center mb-1">
                             <label class="block text-sm font-medium text-gray-700">Password</label>
-                            <button type="button" onclick="document.getElementById('modal-forgot').classList.remove('hidden')" class="text-sm text-primary hover:text-green-600 font-medium transition-colors">Lupa Password?</button>
+                            <button type="button" onclick="document.getElementById('modal-forgot').classList.remove('hidden')" class="text-sm text-primary hover:text-green-600 font-medium transition-colors">
+                                Lupa Password?
+                            </button>
                         </div>
-                        <input type="password" id="login-password" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary outline-none transition-all" placeholder="••••••••" required>
+                        <input type="password" id="login-password" class="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-primary outline-none transition-all" required>
                     </div>
                     <button type="submit" class="w-full bg-primary hover:bg-green-500 text-white font-semibold py-3 rounded-xl shadow-soft transition-colors mt-6">
                         Masuk Dashboard
                     </button>
                 </form>
-
                 <p class="text-center text-sm text-gray-600 mt-8">
                     Belum punya akun? <button type="button" onclick="switchView('register')" class="text-primary font-semibold hover:underline">Daftar Anggota</button>
                 </p>
             </div>
         </div>
 
-        <!-- VIEWS: Register (Soft Pastel Restored) -->
+        <!-- VIEWS: Register -->
         <div id="view-register" class="hidden min-h-screen flex items-center justify-center p-4">
             <div class="max-w-2xl w-full glass rounded-2xl shadow-soft p-8 border border-white my-8">
                 <div class="text-center mb-6">
                     <h2 class="text-2xl font-bold text-gray-900">Pendaftaran Anggota</h2>
-                    <p class="text-sm text-gray-500">Bergabung bersama iMersKoperasi</p>
                 </div>
                 <form id="register-form" class="space-y-6">
-                    <div>
-                        <h4 class="text-sm font-bold text-gray-500 border-b border-gray-200 pb-2 mb-3">Informasi Akun & Pribadi</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
-                                <input type="text" id="reg-name" class="w-full px-4 py-2 rounded-xl border focus:border-primary outline-none" required>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">No. WhatsApp</label>
-                                <input type="text" id="reg-wa" class="w-full px-4 py-2 rounded-xl border focus:border-primary outline-none" required>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                                <input type="email" id="reg-email" class="w-full px-4 py-2 rounded-xl border focus:border-primary outline-none" required>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                                <input type="password" id="reg-password" class="w-full px-4 py-2 rounded-xl border focus:border-primary outline-none" required>
-                            </div>
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Alamat Lengkap</label>
-                                <textarea id="reg-address" class="w-full px-4 py-2 rounded-xl border focus:border-primary outline-none" rows="2" required></textarea>
-                            </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
+                            <input type="text" id="reg-name" class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">No. WhatsApp</label>
+                            <input type="text" id="reg-wa" class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                            <input type="email" id="reg-email" class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                            <input type="password" id="reg-password" class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary" required>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Alamat</label>
+                            <textarea id="reg-address" class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary" required></textarea>
                         </div>
                     </div>
-
-                    <div>
-                        <h4 class="text-sm font-bold text-gray-500 border-b border-gray-200 pb-2 mb-3">Informasi Rekening Bank (Untuk Pencairan)</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Nama Bank</label>
-                                <input type="text" id="reg-bank" placeholder="BCA / Mandiri / BRI" class="w-full px-4 py-2 rounded-xl border focus:border-primary outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">No. Rekening</label>
-                                <input type="number" id="reg-rek" class="w-full px-4 py-2 rounded-xl border focus:border-primary outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Atas Nama</label>
-                                <input type="text" id="reg-owner" class="w-full px-4 py-2 rounded-xl border focus:border-primary outline-none">
-                            </div>
-                        </div>
-                    </div>
-
-                    <button type="submit" class="w-full bg-primary hover:bg-green-500 text-white font-semibold py-3 rounded-xl shadow-soft mt-4">Kirim Pendaftaran</button>
+                    <button type="submit" class="w-full bg-primary hover:bg-green-500 text-white font-semibold py-3 rounded-xl shadow-soft mt-4">
+                        Kirim Pendaftaran
+                    </button>
                 </form>
                 <p class="text-center text-sm text-gray-600 mt-6">
                     Sudah punya akun? <button type="button" onclick="switchView('login')" class="text-primary font-semibold hover:underline">Masuk di sini</button>
@@ -413,7 +477,6 @@
                     </div>
                     <span class="font-bold text-xl text-gray-800">iMersKop</span>
                 </div>
-                
                 <nav class="flex-1 py-6 px-4 space-y-1 overflow-y-auto">
                     <p class="px-4 text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">Menu Utama</p>
                     <a href="#" onclick="switchMenu('dashboard')" id="nav-dashboard" class="nav-item flex items-center gap-3 px-4 py-3 bg-secondary text-green-800 rounded-xl font-medium">
@@ -439,7 +502,6 @@
                         <i data-lucide="pie-chart" class="w-5 h-5"></i> S H U
                     </a>
                 </nav>
-
                 <div class="p-4 border-t border-gray-100">
                     <button onclick="logout()" class="flex items-center gap-3 px-4 py-3 text-danger hover:bg-red-50 w-full rounded-xl transition-colors">
                         <i data-lucide="log-out" class="w-5 h-5"></i> Keluar
@@ -452,77 +514,41 @@
                 <!-- Header -->
                 <header class="bg-white h-20 px-8 flex items-center justify-between border-b border-gray-100 z-10 shrink-0">
                     <div class="flex items-center gap-4">
-                        <button class="md:hidden text-gray-500"><i data-lucide="menu"></i></button>
                         <h2 id="header-title" class="text-xl font-bold text-gray-800">Dashboard</h2>
                     </div>
-                    
                     <div class="flex items-center gap-5">
-                        <button class="text-gray-400 hover:text-primary relative transition-colors" title="Sinkronisasi Data" onclick="fetchInitialData()">
-                            <i data-lucide="refresh-cw"></i> 
+                        <button class="text-gray-400 hover:text-primary transition-colors" onclick="fetchInitialData()">
+                            <i data-lucide="refresh-cw"></i>
                         </button>
-                        <div class="flex items-center gap-3 pl-5 border-l border-gray-200 relative group cursor-pointer">
-                            <div class="text-right hidden sm:block">
-                                <p id="user-name" class="text-sm font-semibold text-gray-800">Nama User</p>
+                        <div class="flex items-center gap-3 pl-5 border-l border-gray-200">
+                            <div class="text-right">
+                                <p id="user-name" class="text-sm font-semibold text-gray-800">User</p>
                                 <p id="user-role" class="text-xs text-primary font-medium">Role</p>
-                            </div>
-                            <div class="w-10 h-10 rounded-full bg-accent/30 text-yellow-600 flex items-center justify-center font-bold">U</div>
-                            
-                            <!-- User Dropdown -->
-                            <div class="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 hidden group-hover:block z-50">
-                                <button onclick="document.getElementById('modal-change-pass').classList.remove('hidden')" class="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-t-xl">Ganti Password</button>
-                                <button onclick="logout()" class="w-full text-left px-4 py-3 text-sm text-danger hover:bg-red-50 rounded-b-xl border-t border-gray-100">Keluar</button>
                             </div>
                         </div>
                     </div>
                 </header>
 
-                <!-- Scrollable Content Area -->
                 <div class="flex-1 overflow-y-auto p-8" id="main-content">
                     
                     <!-- ================= MODUL: DASHBOARD ================= -->
                     <div id="section-dashboard" class="content-section">
-                        <div class="mb-8">
-                            <h2 class="text-2xl font-bold text-gray-800" id="welcome-text">Selamat Datang!</h2>
-                            <p class="text-gray-500 text-sm mt-1">Berikut adalah ringkasan portofolio koperasi Anda.</p>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                             <div class="bg-white p-6 rounded-2xl shadow-soft border border-gray-100">
                                 <p class="text-sm text-gray-500 font-medium">Total Saldo</p>
-                                <div class="flex justify-between items-end mt-2">
-                                    <h3 id="dash-total" class="text-2xl font-bold text-gray-800">Rp 0</h3>
-                                    <div class="w-8 h-8 rounded-lg bg-green-50 text-success flex items-center justify-center"><i data-lucide="wallet" class="w-4 h-4"></i></div>
-                                </div>
+                                <h3 id="dash-total" class="text-2xl font-bold text-gray-800 mt-2">Rp 0</h3>
                             </div>
                             <div class="bg-white p-6 rounded-2xl shadow-soft border border-gray-100">
                                 <p class="text-sm text-gray-500 font-medium">Simpanan Wajib</p>
-                                <div class="flex justify-between items-end mt-2">
-                                    <h3 id="dash-wajib" class="text-2xl font-bold text-gray-800">Rp 0</h3>
-                                    <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-500 flex items-center justify-center"><i data-lucide="piggy-bank" class="w-4 h-4"></i></div>
-                                </div>
+                                <h3 id="dash-wajib" class="text-2xl font-bold text-gray-800 mt-2">Rp 0</h3>
                             </div>
                             <div class="bg-white p-6 rounded-2xl shadow-soft border border-gray-100">
                                 <p class="text-sm text-gray-500 font-medium">Pinjaman Aktif</p>
-                                <div class="flex justify-between items-end mt-2">
-                                    <h3 id="dash-pinjaman" class="text-2xl font-bold text-danger">Rp 0</h3>
-                                    <div class="w-8 h-8 rounded-lg bg-red-50 text-danger flex items-center justify-center"><i data-lucide="credit-card" class="w-4 h-4"></i></div>
-                                </div>
+                                <h3 id="dash-pinjaman" class="text-2xl font-bold text-danger mt-2">Rp 0</h3>
                             </div>
                             <div class="bg-gradient-to-br from-primary to-green-500 p-6 rounded-2xl shadow-soft text-white">
-                                <p class="text-sm text-green-50 font-medium">Estimasi SHU (Berjalan)</p>
-                                <div class="flex justify-between items-end mt-2">
-                                    <h3 id="dash-shu" class="text-2xl font-bold">Rp 0</h3>
-                                    <div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center"><i data-lucide="award" class="w-4 h-4"></i></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-soft border border-gray-100">
-                                <h3 class="font-bold text-gray-800 mb-4">Pertumbuhan Saldo</h3>
-                                <canvas id="growthChart" height="100"></canvas>
-                            </div>
-                            <div class="bg-white p-6 rounded-2xl shadow-soft border border-gray-100">
-                                <h3 class="font-bold text-gray-800 mb-4">Komposisi Simpanan</h3>
-                                <canvas id="compositionChart"></canvas>
+                                <p class="text-sm text-green-50 font-medium">Estimasi SHU</p>
+                                <h3 id="dash-shu" class="text-2xl font-bold mt-2">Rp 0</h3>
                             </div>
                         </div>
                     </div>
@@ -532,152 +558,124 @@
                         <div class="bg-white rounded-2xl shadow-soft border border-gray-100 overflow-hidden">
                             <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
                                 <div>
-                                    <h3 class="font-bold text-gray-800 text-lg">Daftar Anggota Koperasi</h3>
-                                    <p class="text-sm text-gray-500">Kelola persetujuan dan data anggota.</p>
+                                    <h3 class="font-bold text-gray-800 text-lg">Daftar Anggota</h3>
                                 </div>
-                                <button onclick="document.getElementById('modal-add-member').classList.remove('hidden')" class="bg-primary hover:bg-green-500 text-white px-4 py-2 rounded-xl shadow-soft text-sm font-medium flex items-center gap-2">
-                                    <i data-lucide="user-plus" class="w-4 h-4"></i> Tambah Anggota
+                                <button onclick="document.getElementById('modal-add-member').classList.remove('hidden')" class="bg-primary hover:bg-green-500 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2 shadow-soft">
+                                    <i data-lucide="user-plus" class="w-4 h-4"></i> Tambah
                                 </button>
                             </div>
                             <div class="overflow-x-auto">
                                 <table class="w-full text-left border-collapse">
                                     <thead>
-                                        <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
-                                            <th class="p-4 font-medium">ID Anggota</th>
-                                            <th class="p-4 font-medium">Nama & Kontak</th>
-                                            <th class="p-4 font-medium">Data Bank</th>
-                                            <th class="p-4 font-medium">Status</th>
-                                            <th class="p-4 font-medium text-right">Aksi</th>
+                                        <tr class="bg-gray-50 text-gray-500 text-xs uppercase">
+                                            <th class="p-4">ID</th>
+                                            <th class="p-4">Nama</th>
+                                            <th class="p-4">Bank</th>
+                                            <th class="p-4">Status</th>
+                                            <th class="p-4 text-right">Aksi</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="member-tbody" class="divide-y divide-gray-100 text-sm">
-                                        <!-- Data Anggota akan dirender di sini via JS -->
-                                    </tbody>
+                                    <tbody id="member-tbody" class="divide-y divide-gray-100 text-sm"></tbody>
                                 </table>
                             </div>
                         </div>
                     </div>
 
-                    <!-- ================= MODUL: SIMPANAN (ENTERPRISE) ================= -->
+                    <!-- ================= MODUL: SIMPANAN ================= -->
                     <div id="section-simpanan" class="content-section hidden space-y-6">
-                        <!-- Summary Cards -->
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div class="bg-white p-5 rounded-2xl shadow-soft border border-gray-100 flex items-center gap-4">
-                                <div class="w-12 h-12 bg-green-50 text-success rounded-xl flex items-center justify-center"><i data-lucide="wallet"></i></div>
-                                <div><p class="text-xs text-gray-500 font-medium">TOTAL SALDO TABUNGAN</p><h3 id="stat-total-tab" class="text-xl font-bold text-gray-800">Rp ---</h3></div>
+                            <div class="bg-white p-5 rounded-2xl shadow-soft border border-gray-100">
+                                <p class="text-xs text-gray-500 font-medium">TOTAL SALDO TABUNGAN</p>
+                                <h3 id="stat-total-tab" class="text-xl font-bold text-gray-800">Rp 0</h3>
                             </div>
-                            <div class="bg-white p-5 rounded-2xl shadow-soft border border-gray-100 flex items-center gap-4">
-                                <div class="w-12 h-12 bg-blue-50 text-blue-500 rounded-xl flex items-center justify-center"><i data-lucide="arrow-down-circle"></i></div>
-                                <div><p class="text-xs text-gray-500 font-medium">TOTAL TRANSAKSI SETORAN</p><h3 id="stat-total-setor" class="text-xl font-bold text-gray-800">Rp ---</h3></div>
+                            <div class="bg-white p-5 rounded-2xl shadow-soft border border-gray-100">
+                                <p class="text-xs text-gray-500 font-medium">TOTAL SETORAN</p>
+                                <h3 id="stat-total-setor" class="text-xl font-bold text-gray-800">Rp 0</h3>
                             </div>
-                            <div class="bg-white p-5 rounded-2xl shadow-soft border border-gray-100 flex items-center gap-4">
-                                <div class="w-12 h-12 bg-orange-50 text-warning rounded-xl flex items-center justify-center"><i data-lucide="arrow-up-circle"></i></div>
-                                <div><p class="text-xs text-gray-500 font-medium">TOTAL TRANSAKSI PENARIKAN</p><h3 id="stat-total-tarik" class="text-xl font-bold text-gray-800">Rp ---</h3></div>
+                            <div class="bg-white p-5 rounded-2xl shadow-soft border border-gray-100">
+                                <p class="text-xs text-gray-500 font-medium">TOTAL PENARIKAN</p>
+                                <h3 id="stat-total-tarik" class="text-xl font-bold text-gray-800">Rp 0</h3>
                             </div>
                         </div>
-
-                        <!-- Main Table Area -->
                         <div class="bg-white rounded-2xl shadow-soft border border-gray-100 overflow-hidden">
-                            <div class="p-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gray-50/30">
-                                <div class="flex items-center gap-2">
-                                    <div class="p-2 bg-red-50 text-danger rounded-lg"><i data-lucide="piggy-bank" class="w-5 h-5"></i></div>
-                                    <div>
-                                        <h3 class="font-bold text-gray-800 text-lg">Transaksi Tabungan</h3>
-                                        <p class="text-xs text-gray-500">Setor, tarik, dan mutasi dana simpanan anggota</p>
-                                    </div>
+                            <div class="p-5 border-b border-gray-100 flex justify-between bg-gray-50/30">
+                                <div>
+                                    <h3 class="font-bold text-gray-800 text-lg">Transaksi Tabungan</h3>
                                 </div>
-                                <div class="flex gap-2">
-                                    <button onclick="document.getElementById('modal-add-transaction').classList.remove('hidden')" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shadow-soft">
-                                        <i data-lucide="plus" class="w-4 h-4"></i> Transaksi Baru
-                                    </button>
-                                </div>
+                                <button onclick="document.getElementById('modal-add-transaction').classList.remove('hidden')" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium shadow-soft">
+                                    Transaksi Baru
+                                </button>
                             </div>
-                            
-                            <div class="p-4 border-b border-gray-100 flex gap-2 overflow-x-auto">
-                                <button onclick="renderTransactions('All')" class="px-4 py-1.5 bg-gray-100 text-gray-800 text-sm font-medium rounded-full focus:ring-2">Semua Transaksi</button>
-                                <button onclick="renderTransactions('Setor')" class="px-4 py-1.5 text-gray-500 hover:bg-gray-50 text-sm font-medium rounded-full transition-colors focus:ring-2">Setoran</button>
-                                <button onclick="renderTransactions('Tarik')" class="px-4 py-1.5 text-gray-500 hover:bg-gray-50 text-sm font-medium rounded-full transition-colors focus:ring-2">Penarikan</button>
-                            </div>
-
                             <div class="overflow-x-auto">
                                 <table class="w-full text-left border-collapse">
                                     <thead>
-                                        <tr class="bg-gray-50/50 text-gray-500 text-xs uppercase tracking-wider">
-                                            <th class="p-4 font-medium">Waktu</th>
-                                            <th class="p-4 font-medium">ID Transaksi</th>
-                                            <th class="p-4 font-medium">Anggota</th>
-                                            <th class="p-4 font-medium">Jenis</th>
-                                            <th class="p-4 font-medium text-right">Jumlah</th>
+                                        <tr class="bg-gray-50/50 text-gray-500 text-xs uppercase">
+                                            <th class="p-4">Waktu</th>
+                                            <th class="p-4">ID Transaksi</th>
+                                            <th class="p-4">Anggota</th>
+                                            <th class="p-4">Jenis</th>
+                                            <th class="p-4 text-right">Jumlah</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="trx-tbody" class="divide-y divide-gray-100 text-sm">
-                                        <tr><td colspan="5" class="p-8 text-center text-gray-400">Belum ada transaksi</td></tr>
-                                    </tbody>
+                                    <tbody id="trx-tbody" class="divide-y divide-gray-100 text-sm"></tbody>
                                 </table>
                             </div>
                         </div>
                     </div>
 
-                    <!-- ================= MODUL: PINJAMAN (ENTERPRISE) ================= -->
+                    <!-- ================= MODUL: PINJAMAN ================= -->
                     <div id="section-pinjaman" class="content-section hidden space-y-6">
-                        <!-- Summary Cards -->
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            <div class="bg-white p-5 rounded-2xl shadow-soft border border-gray-100 flex items-center gap-4">
-                                <div class="w-10 h-10 bg-red-50 text-danger rounded-xl flex items-center justify-center"><i data-lucide="activity"></i></div>
-                                <div><p class="text-xs text-gray-500 font-medium">OUTSTANDING AKTIF</p><h3 id="stat-loan-active" class="text-lg font-bold text-gray-800">Rp ---</h3></div>
+                            <div class="bg-white p-5 rounded-2xl shadow-soft border border-gray-100">
+                                <p class="text-xs text-gray-500 font-medium">OUTSTANDING AKTIF</p>
+                                <h3 id="stat-loan-active" class="text-lg font-bold text-gray-800">Rp 0</h3>
                             </div>
-                            <div class="bg-white p-5 rounded-2xl shadow-soft border border-gray-100 flex items-center gap-4">
-                                <div class="w-10 h-10 bg-orange-50 text-warning rounded-xl flex items-center justify-center"><i data-lucide="clock"></i></div>
-                                <div><p class="text-xs text-gray-500 font-medium">PENGAJUAN PENDING</p><h3 id="stat-loan-pending" class="text-lg font-bold text-gray-800">---</h3></div>
+                            <div class="bg-white p-5 rounded-2xl shadow-soft border border-gray-100">
+                                <p class="text-xs text-gray-500 font-medium">PENGAJUAN PENDING</p>
+                                <h3 id="stat-loan-pending" class="text-lg font-bold text-gray-800">0</h3>
                             </div>
-                            <div class="bg-white p-5 rounded-2xl shadow-soft border border-gray-100 flex items-center gap-4">
-                                <div class="w-10 h-10 bg-green-50 text-success rounded-xl flex items-center justify-center"><i data-lucide="check-circle"></i></div>
-                                <div><p class="text-xs text-gray-500 font-medium">TOTAL DICAIRKAN</p><h3 id="stat-loan-disbursed" class="text-lg font-bold text-gray-800">Rp ---</h3></div>
+                            <div class="bg-white p-5 rounded-2xl shadow-soft border border-gray-100">
+                                <p class="text-xs text-gray-500 font-medium">BATAS PLAFON</p>
+                                <h3 id="stat-loan-plafon" class="text-lg font-bold text-gray-800">Maks 3x</h3>
                             </div>
-                            <div class="bg-white p-5 rounded-2xl shadow-soft border border-gray-100 flex items-center gap-4">
-                                <div class="w-10 h-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center"><i data-lucide="shield-alert"></i></div>
-                                <div><p class="text-xs text-gray-500 font-medium">NPL RATIO</p><h3 class="text-lg font-bold text-gray-800">0%</h3></div>
+                            <div class="bg-white p-5 rounded-2xl shadow-soft border border-gray-100">
+                                <p class="text-xs text-gray-500 font-medium">BATAS NPL / MACET</p>
+                                <h3 id="stat-npl-ratio" class="text-lg font-bold text-purple-600">0%</h3>
                             </div>
                         </div>
 
-                        <!-- Main Table Area -->
                         <div class="bg-white rounded-2xl shadow-soft border border-gray-100 overflow-hidden">
-                            <div class="p-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gray-50/30">
-                                <div class="flex items-center gap-2">
-                                    <div class="p-2 bg-red-50 text-danger rounded-lg"><i data-lucide="hand-coins" class="w-5 h-5"></i></div>
-                                    <div>
-                                        <h3 class="font-bold text-gray-800 text-lg">Manajemen Pinjaman</h3>
-                                        <p class="text-xs text-gray-500">Pengajuan, pencairan, pembayaran angsuran, dan pelunasan</p>
-                                    </div>
+                            <div class="p-5 border-b border-gray-100 flex justify-between bg-gray-50/30">
+                                <div>
+                                    <h3 class="font-bold text-gray-800 text-lg">Manajemen Pinjaman</h3>
                                 </div>
-                                <div class="flex gap-2">
-                                    <button onclick="document.getElementById('modal-add-loan').classList.remove('hidden')" class="px-4 py-2 bg-danger hover:bg-red-600 text-white rounded-lg text-sm font-medium flex items-center gap-2 shadow-soft transition-colors">
-                                        <i data-lucide="plus" class="w-4 h-4"></i> Pengajuan Baru
-                                    </button>
-                                </div>
+                                <button onclick="document.getElementById('modal-add-loan').classList.remove('hidden')" class="px-4 py-2 bg-danger hover:bg-red-600 text-white rounded-lg text-sm font-medium shadow-soft">
+                                    Pengajuan Baru
+                                </button>
                             </div>
-                            
                             <div class="p-4 border-b border-gray-100 flex gap-2 overflow-x-auto">
-                                <button onclick="renderLoans('All')" class="px-4 py-1.5 bg-gray-100 text-gray-800 text-sm font-medium rounded-full focus:ring-2">Semua</button>
-                                <button onclick="renderLoans('Pending')" class="px-4 py-1.5 text-gray-500 hover:bg-gray-50 text-sm font-medium rounded-full transition-colors focus:ring-2">Pengajuan</button>
-                                <button onclick="renderLoans('Disbursed')" class="px-4 py-1.5 text-gray-500 hover:bg-gray-50 text-sm font-medium rounded-full transition-colors focus:ring-2">Aktif / Cair</button>
-                                <button onclick="renderLoans('Lunas')" class="px-4 py-1.5 text-gray-500 hover:bg-gray-50 text-sm font-medium rounded-full transition-colors focus:ring-2">Lunas</button>
+                                <button onclick="renderLoans('All')" class="px-4 py-1.5 bg-gray-100 text-gray-800 text-sm font-medium rounded-full">
+                                    Semua
+                                </button>
+                                <button onclick="renderLoans('Pending')" class="px-4 py-1.5 text-gray-500 hover:bg-gray-50 text-sm font-medium rounded-full">
+                                    Pengajuan
+                                </button>
+                                <button onclick="renderLoans('Disbursed')" class="px-4 py-1.5 text-gray-500 hover:bg-gray-50 text-sm font-medium rounded-full">
+                                    Aktif / Cair
+                                </button>
                             </div>
-
                             <div class="overflow-x-auto">
                                 <table class="w-full text-left border-collapse">
                                     <thead>
-                                        <tr class="bg-gray-50/50 text-gray-500 text-xs uppercase tracking-wider">
-                                            <th class="p-4 font-medium">No. Kontrak</th>
-                                            <th class="p-4 font-medium">Anggota</th>
-                                            <th class="p-4 font-medium text-right">Pokok & Tenor</th>
-                                            <th class="p-4 font-medium">Status</th>
-                                            <th class="p-4 font-medium text-right">Aksi</th>
+                                        <tr class="bg-gray-50/50 text-gray-500 text-xs uppercase">
+                                            <th class="p-4">No. Kontrak</th>
+                                            <th class="p-4">Anggota</th>
+                                            <th class="p-4 text-right">Pokok & Tenor</th>
+                                            <th class="p-4">Status</th>
+                                            <th class="p-4 text-right">Aksi</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="loan-tbody" class="divide-y divide-gray-100 text-sm">
-                                        <!-- Dirender via JS -->
-                                    </tbody>
+                                    <tbody id="loan-tbody" class="divide-y divide-gray-100 text-sm"></tbody>
                                 </table>
                             </div>
                         </div>
@@ -685,42 +683,89 @@
 
                     <!-- ================= MODUL: SHU ================= -->
                     <div id="section-shu" class="content-section hidden">
-                        <div class="max-w-3xl mx-auto">
-                            <div class="bg-white rounded-2xl shadow-soft border border-gray-100 overflow-hidden">
-                                <div class="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-                                    <div><h3 class="font-bold text-gray-800 text-lg">Kalkulator Pembagian SHU</h3></div>
-                                    <div class="w-10 h-10 bg-primary/20 text-primary rounded-xl flex items-center justify-center"><i data-lucide="pie-chart"></i></div>
-                                </div>
-                                <div class="p-8 space-y-6">
-                                    <div class="grid grid-cols-2 gap-6">
-                                        <div><label class="block text-sm font-medium text-gray-700 mb-1">Tahun Buku</label><input type="number" value="2026" class="w-full px-4 py-2 rounded-xl border bg-gray-50 outline-none" readonly></div>
-                                        <div><label class="block text-sm font-medium text-gray-700 mb-1">Total Pendapatan (Rp)</label><input type="number" placeholder="Contoh: 150000000" class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary"></div>
-                                        <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Total Biaya Operasional (Rp)</label><input type="number" placeholder="Contoh: 50000000" class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary"></div>
-                                    </div>
-                                    <button class="w-full bg-primary hover:bg-green-500 text-white font-semibold py-3 rounded-xl shadow-soft">Hitung SHU Bersih</button>
-                                </div>
-                            </div>
+                        <div class="bg-white rounded-2xl shadow-soft border border-gray-100 overflow-hidden p-8 text-center text-gray-500">
+                            Modul SHU Sedang Dalam Pengembangan.
                         </div>
                     </div>
 
-                    <!-- ================= MODUL: KONFIGURASI ================= -->
-                    <div id="section-config" class="content-section hidden">
-                        <div class="max-w-3xl mx-auto">
+                    <!-- ================= MODUL: KONFIGURASI (MASTER PRODUK & REKENING) ================= -->
+                    <div id="section-config" class="content-section hidden space-y-6">
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            
+                            <!-- Setting Batas Plafon & NPL -->
                             <div class="bg-white rounded-2xl shadow-soft border border-gray-100 overflow-hidden">
-                                <div class="p-6 border-b border-gray-100 bg-gray-50/50"><h3 class="font-bold text-gray-800 text-lg">Konfigurasi Sistem Global</h3></div>
-                                <div class="p-8 space-y-8">
-                                    <div>
-                                        <label class="block text-sm font-bold text-gray-800 mb-1 uppercase tracking-wider">Batas Plafon Pinjaman (%)</label>
-                                        <div class="flex gap-3"><input type="number" value="80" class="flex-1 px-4 py-2 rounded-xl border outline-none focus:border-primary"><button class="px-6 py-2 bg-darkcard text-white font-medium rounded-xl hover:bg-gray-800">Simpan</button></div>
-                                    </div>
-                                    <hr class="border-gray-100">
-                                    <div>
-                                        <label class="block text-sm font-bold text-gray-800 mb-1 uppercase tracking-wider">WhatsApp Gateway</label>
-                                        <div class="space-y-4">
-                                            <div><label class="block text-sm font-medium text-gray-700 mb-1">Provider WA API</label><select class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary"><option>Fonnte</option><option>WAPlus</option></select></div>
-                                            <div><label class="block text-sm font-medium text-gray-700 mb-1">Nomor Pengirim (Sender)</label><input type="text" placeholder="628123456789" class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary"></div>
-                                            <div class="flex gap-3 items-end"><div class="flex-1"><label class="block text-sm font-medium text-gray-700 mb-1">API Key / Token</label><input type="password" placeholder="Masukkan API Key" class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary"></div><button class="px-6 py-2 bg-darkcard text-white font-medium rounded-xl hover:bg-gray-800">Simpan</button></div>
+                                <div class="p-5 border-b border-gray-100 bg-gray-50/50">
+                                    <h3 class="font-bold text-gray-800 text-lg">Pengaturan Sistem</h3>
+                                </div>
+                                <div class="p-6">
+                                    <form id="form-config-settings" class="space-y-4">
+                                        <div>
+                                            <label class="block text-sm font-bold text-gray-800 mb-1">Batas NPL Threshold (%)</label>
+                                            <input type="number" id="cfg-npl" class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary">
                                         </div>
+                                        <div>
+                                            <label class="block text-sm font-bold text-gray-800 mb-1">Batas Plafon Pinjaman (Pengali Simpanan)</label>
+                                            <input type="number" id="cfg-limit" class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary">
+                                        </div>
+                                        <button type="submit" class="w-full py-2 bg-darkcard text-white font-medium rounded-xl hover:bg-gray-800 mt-2">
+                                            Simpan Pengaturan
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+
+                            <!-- Tambah Rekening Kas -->
+                            <div class="bg-white rounded-2xl shadow-soft border border-gray-100 overflow-hidden">
+                                <div class="p-5 border-b border-gray-100 bg-gray-50/50">
+                                    <h3 class="font-bold text-gray-800 text-lg">Master Rekening Koperasi</h3>
+                                </div>
+                                <div class="p-6">
+                                    <form id="form-config-account" class="space-y-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Nama Kas / Bank</label>
+                                            <input type="text" id="cfg-acc-name" placeholder="BCA Koperasi" class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary" required>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Nomor Rekening</label>
+                                            <input type="number" id="cfg-acc-no" class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary" required>
+                                        </div>
+                                        <button type="submit" class="w-full py-2 bg-primary hover:bg-green-500 text-white font-medium rounded-xl shadow-soft">
+                                            Tambah Rekening
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+
+                            <!-- Tambah Produk Pinjaman -->
+                            <div class="bg-white rounded-2xl shadow-soft border border-gray-100 overflow-hidden lg:col-span-2">
+                                <div class="p-5 border-b border-gray-100 bg-gray-50/50">
+                                    <h3 class="font-bold text-gray-800 text-lg">Master Produk Pinjaman</h3>
+                                </div>
+                                <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <form id="form-config-product" class="space-y-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Nama Produk</label>
+                                            <input type="text" id="cfg-prod-name" placeholder="Pinjaman Produktif" class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary" required>
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-1">Bunga (%)</label>
+                                                <input type="number" step="0.1" id="cfg-prod-rate" class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary" required>
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-1">Tenor Max (Bulan)</label>
+                                                <input type="number" id="cfg-prod-tenor" class="w-full px-4 py-2 rounded-xl border outline-none focus:border-primary" required>
+                                            </div>
+                                        </div>
+                                        <button type="submit" class="w-full py-2 bg-primary hover:bg-green-500 text-white font-medium rounded-xl shadow-soft">
+                                            Tambah Produk
+                                        </button>
+                                    </form>
+                                    <div>
+                                        <p class="text-sm font-bold text-gray-500 uppercase mb-3">Daftar Produk Aktif</p>
+                                        <ul id="list-products" class="space-y-2 text-sm text-gray-600">
+                                            <!-- List Produk di render JS -->
+                                        </ul>
                                     </div>
                                 </div>
                             </div>
@@ -733,33 +778,33 @@
     </div>
 
     <script>
-        // INIT ICONS
         lucide.createIcons();
 
         // GANTI INI DENGAN URL DEPLOY APPS SCRIPT ANDA
-        const CONFIG = {
-            API_URL: 'https://script.google.com/macros/s/AKfycbwIjTv_o94D_i0LHqv-S3LtEgAdLByYdxwnD0wFHvGpIM5_k5hdw-OF6qutrigjBYbo/exec'
+        const CONFIG = { 
+            API_URL: 'https://script.google.com/macros/s/AKfycbycE7-uS90D9XN7D1K354fRj_2S7wXU5_y_H9Z-3S8P9yA1R3Yn-4e5QJp9_g2x/exec' 
         };
 
-        // ================= STATE MANAGEMENT =================
         let AppState = {
             token: localStorage.getItem('kop_token'),
             user: JSON.parse(localStorage.getItem('kop_user') || 'null'),
-            dashboard: {},
-            members: [],
-            transactions: [],
+            dashboard: {}, 
+            members: [], 
+            transactions: [], 
             loans: [],
-            products: [],      // Data Master Produk
-            coopAccounts: []   // Data Master Rekening Koperasi
+            products: [], 
+            coopAccounts: [], 
+            settings: []
         };
 
-        // UI HELPERS
+        // --- UTILS ---
         function showLoader(text = 'Memuat data...') { 
-            document.getElementById('loader-text').textContent = text;
+            document.getElementById('loader-text').textContent = text; 
             document.getElementById('loader').style.display = 'flex'; 
         }
-        function hideLoader() { document.getElementById('loader').style.display = 'none'; }
-        
+        function hideLoader() { 
+            document.getElementById('loader').style.display = 'none'; 
+        }
         function showToast(message, type = 'success') {
             const toast = document.getElementById('toast');
             const msg = document.getElementById('toast-msg');
@@ -767,25 +812,39 @@
             const content = document.getElementById('toast-content');
 
             msg.textContent = message;
-            if (type === 'error') {
-                content.classList.add('border-danger', 'text-danger');
-                content.classList.remove('border-success', 'text-success');
-                icon.setAttribute('data-lucide', 'alert-circle');
-            } else {
-                content.classList.add('border-success', 'text-success');
-                content.classList.remove('border-danger', 'text-danger');
-                icon.setAttribute('data-lucide', 'check-circle');
+            if (type === 'error') { 
+                content.classList.add('border-danger', 'text-danger'); 
+                content.classList.remove('border-success', 'text-success'); 
+                icon.setAttribute('data-lucide', 'alert-circle'); 
+            } else { 
+                content.classList.add('border-success', 'text-success'); 
+                content.classList.remove('border-danger', 'text-danger'); 
+                icon.setAttribute('data-lucide', 'check-circle'); 
             }
             lucide.createIcons();
-            toast.classList.remove('translate-x-full');
+            toast.classList.remove('translate-x-full'); 
             setTimeout(() => { toast.classList.add('translate-x-full'); }, 3000);
         }
-
-        function formatRp(angka) {
-            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
+        function formatRp(angka) { 
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka); 
         }
 
-        // VIEW & MENU ROUTER (INSTANT - NO API CALLS)
+        // --- CUSTOM CONFIRM MODAL ---
+        function askConfirm(msg, callback) {
+            document.getElementById('confirm-msg').textContent = msg;
+            const modal = document.getElementById('modal-confirm');
+            modal.classList.remove('hidden');
+            
+            document.getElementById('btn-confirm-cancel').onclick = () => {
+                modal.classList.add('hidden');
+            };
+            document.getElementById('btn-confirm-ok').onclick = () => { 
+                modal.classList.add('hidden'); 
+                callback(); 
+            };
+        }
+
+        // --- NAVIGATION ---
         function switchView(viewId) {
             ['view-login', 'view-register', 'view-dashboard'].forEach(id => {
                 document.getElementById(id).classList.add('hidden');
@@ -794,508 +853,518 @@
         }
 
         function switchMenu(menuId) {
-            // Hide all sections
             document.querySelectorAll('.content-section').forEach(el => el.classList.add('hidden'));
             document.getElementById(`section-${menuId}`).classList.remove('hidden');
             
-            // Update active state in sidebar
-            document.querySelectorAll('.nav-item').forEach(el => {
-                el.classList.remove('bg-secondary', 'text-green-800');
-                el.classList.add('text-gray-600', 'hover:bg-gray-50');
+            document.querySelectorAll('.nav-item').forEach(el => { 
+                el.classList.remove('bg-secondary', 'text-green-800'); 
+                el.classList.add('text-gray-600', 'hover:bg-gray-50'); 
             });
+            
             const activeNav = document.getElementById(`nav-${menuId}`);
-            if(activeNav) {
-                activeNav.classList.add('bg-secondary', 'text-green-800');
-                activeNav.classList.remove('text-gray-600', 'hover:bg-gray-50');
+            if(activeNav) { 
+                activeNav.classList.add('bg-secondary', 'text-green-800'); 
+                activeNav.classList.remove('text-gray-600', 'hover:bg-gray-50'); 
             }
-
-            // Update Header Title
-            const titles = {
-                'dashboard': 'Dashboard',
-                'anggota': 'Data Anggota',
-                'simpanan': 'Modul Simpanan',
-                'pinjaman': 'Manajemen Pinjaman',
-                'shu': 'Sisa Hasil Usaha',
-                'config': 'Konfigurasi'
+            
+            const titles = { 
+                'dashboard': 'Dashboard', 
+                'anggota': 'Data Anggota', 
+                'simpanan': 'Modul Simpanan', 
+                'pinjaman': 'Manajemen Pinjaman', 
+                'shu': 'Sisa Hasil Usaha', 
+                'config': 'Konfigurasi Sistem' 
             };
             document.getElementById('header-title').textContent = titles[menuId] || 'Menu';
 
-            // Instant render from AppState
             if(menuId === 'dashboard') renderDashboard();
             if(menuId === 'anggota') renderMembers();
             if(menuId === 'simpanan') renderTransactions('All');
             if(menuId === 'pinjaman') renderLoans('All');
+            if(menuId === 'config') renderConfig();
         }
 
-        // API WRAPPER
+        // --- API WRAPPER ---
         async function apiCall(action, payload = {}) {
             try {
-                const response = await fetch(CONFIG.API_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: action, payload: payload, token: AppState.token })
+                const response = await fetch(CONFIG.API_URL, { 
+                    method: 'POST', 
+                    body: JSON.stringify({ action, payload, token: AppState.token }) 
                 });
                 const result = await response.json();
                 if (result.status === 'error') throw new Error(result.message);
                 return result.data;
-            } catch (error) {
-                console.error('API Error:', error);
-                throw error;
+            } catch (error) { 
+                console.error('API Error:', error); 
+                throw error; 
             }
         }
 
-        // ================= FETCH INITIAL DATA (THE ONLY LOADING NEEDED) =================
+        // --- CORE DATA FETCH ---
         async function fetchInitialData() {
-            showLoader('Sinkronisasi Data Enterprise...');
+            showLoader('Sinkronisasi Data Master...');
             try {
                 const data = await apiCall('getInitialData');
-                AppState.dashboard = data.dashboard || {};
+                AppState.dashboard = data.dashboard || {}; 
                 AppState.members = data.members || [];
-                AppState.transactions = data.transactions || [];
+                AppState.transactions = data.transactions || []; 
                 AppState.loans = data.loans || [];
-                AppState.products = data.products || [];
+                AppState.products = data.products || []; 
                 AppState.coopAccounts = data.coopAccounts || [];
+                AppState.settings = data.settings || [];
                 
-                populateDatalists(); // Update Searchable Dropdowns & Selects
-                postLoginSetup();    // Update UI Header
-                
-                // Re-render currently active menu subtly
+                populateDatalists(); 
+                postLoginSetup();
+
                 const activeMenu = document.querySelector('.nav-item.bg-secondary');
                 if(activeMenu) {
-                    const menuId = activeMenu.id.replace('nav-', '');
-                    switchMenu(menuId);
+                    switchMenu(activeMenu.id.replace('nav-', '')); 
                 } else {
                     switchMenu('dashboard');
                 }
             } catch (err) {
                 showToast("Gagal mengambil data: " + err.message, 'error');
                 if(err.message.includes('Token')) logout();
-            } finally {
-                hideLoader();
+            } finally { 
+                hideLoader(); 
             }
         }
 
         function populateDatalists() {
-            // 1. Datalist Members (Untuk Transaksi & Pinjaman Baru)
-            const optionsHtml = AppState.members.map(m => `<option value="${m.member_id}">${m.full_name}</option>`).join('');
+            // Dropdown Anggota (Searchable)
             document.querySelectorAll('datalist[id="dl-members"]').forEach(dl => {
-                dl.innerHTML = optionsHtml;
+                dl.innerHTML = AppState.members.map(m => `<option value="${m.member_id}">${m.full_name}</option>`).join('');
             });
-
-            // 2. Select Box Produk Pinjaman
-            if (AppState.products) {
-                const prodHtml = AppState.products.map(p => `<option value="${p.product_id}">${p.product_name} (Bunga ${p.interest_rate}%)</option>`).join('');
-                const productSelect = document.getElementById('loan-product');
-                if (productSelect) productSelect.innerHTML = prodHtml;
+            
+            // Dropdown Produk Pinjaman
+            const productSelect = document.getElementById('loan-product');
+            if (productSelect && AppState.products) {
+                productSelect.innerHTML = AppState.products.map(p => `<option value="${p.product_id}">${p.product_name} (Bunga ${p.interest_rate}%)</option>`).join('');
             }
-
-            // 3. Select Box Kas Koperasi (Untuk Metode Bayar)
-            if (AppState.coopAccounts) {
-                const accHtml = AppState.coopAccounts.map(a => `<option value="${a.account_name}">${a.account_name}</option>`).join('');
-                const payMethodSelect = document.getElementById('pay-method');
-                if (payMethodSelect) {
-                    payMethodSelect.innerHTML = `<option value="Kas Tunai">Kas Tunai</option>` + accHtml;
-                }
+            
+            // Dropdown Metode Pembayaran
+            const payMethodSelect = document.getElementById('pay-method');
+            if (payMethodSelect && AppState.coopAccounts) {
+                payMethodSelect.innerHTML = `<option value="Kas Tunai">Kas Tunai</option>` + 
+                    AppState.coopAccounts.map(a => `<option value="${a.account_name}">${a.account_name} (${a.account_number})</option>`).join('');
             }
-        }
-
-        // ================= AUTHENTICATION =================
-        const loginForm = document.getElementById('login-form');
-        if (loginForm) {
-            loginForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const email = document.getElementById('login-email').value;
-                const password = document.getElementById('login-password').value;
-                
-                showLoader('Verifikasi akun...');
-                try {
-                    const data = await apiCall('login', { email, password });
-                    AppState.token = data.token;
-                    AppState.user = data.user;
-                    localStorage.setItem('kop_token', data.token);
-                    localStorage.setItem('kop_user', JSON.stringify(data.user));
-                    
-                    showToast("Login Berhasil");
-                    await fetchInitialData(); // Load all data instantly after login
-                } catch (err) {
-                    hideLoader();
-                    showToast(err.message, 'error');
-                }
-            });
-        }
-
-        const registerForm = document.getElementById('register-form');
-        if (registerForm) {
-            registerForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const payload = {
-                    full_name: document.getElementById('reg-name').value,
-                    whatsapp: document.getElementById('reg-wa').value,
-                    email: document.getElementById('reg-email').value,
-                    address: document.getElementById('reg-address').value,
-                    password: document.getElementById('reg-password').value,
-                    bank_name: document.getElementById('reg-bank').value,
-                    bank_account: document.getElementById('reg-rek').value,
-                    bank_owner: document.getElementById('reg-owner').value
-                };
-                showLoader();
-                try {
-                    const res = await apiCall('register', payload);
-                    showToast(res.message);
-                    switchView('login');
-                } catch (err) { showToast(err.message, 'error'); } finally { hideLoader(); }
-            });
         }
 
         function postLoginSetup() {
             if(!AppState.user) return;
             document.getElementById('user-name').textContent = AppState.user.name;
             document.getElementById('user-role').textContent = AppState.user.role;
-            document.getElementById('welcome-text').textContent = `Selamat Datang, ${AppState.user.name.split(' ')[0]}!`;
             
-            // RBAC UI
             if(['Super Admin', 'Admin', 'Ketua', 'Sekretaris'].includes(AppState.user.role)) {
                 document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
             }
-
             switchView('dashboard');
         }
 
-        function logout() {
-            localStorage.removeItem('kop_token');
-            localStorage.removeItem('kop_user');
-            AppState.token = null; AppState.user = null;
-            switchView('login');
+        function logout() { 
+            localStorage.removeItem('kop_token'); 
+            localStorage.removeItem('kop_user'); 
+            AppState.token = null; 
+            AppState.user = null; 
+            switchView('login'); 
         }
 
-        // ================= RENDERERS (SYNC / INSTANT) =================
+        // --- RENDERERS ---
         function renderDashboard() {
-            if(!AppState.dashboard) return;
             document.getElementById('dash-total').textContent = formatRp(AppState.dashboard.total_saldo || 0);
             document.getElementById('dash-wajib').textContent = formatRp(AppState.dashboard.simpanan_wajib || 0);
             document.getElementById('dash-pinjaman').textContent = formatRp(AppState.dashboard.pinjaman_aktif || 0);
-            document.getElementById('dash-shu').textContent = formatRp(AppState.dashboard.est_shu || 0);
-            initCharts();
         }
 
         function renderMembers() {
-            const tbody = document.getElementById('member-tbody');
+            const tbody = document.getElementById('member-tbody'); 
             tbody.innerHTML = '';
-            
-            if(!AppState.members || AppState.members.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-gray-400">Belum ada data anggota</td></tr>`;
-                return;
+
+            if(!AppState.members.length) {
+                return tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-gray-400">Belum ada data</td></tr>`;
             }
 
             AppState.members.forEach(m => {
                 let statusColor = m.status === 'Active' ? 'bg-green-100 text-green-800' : (m.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800');
-                
                 let actionBtns = '';
+                
                 if(m.status === 'Pending') {
-                    actionBtns = `
-                        <button onclick="updateMemberStatus('${m.member_id}', 'Active')" title="Setujui" class="p-1.5 bg-green-50 text-success rounded-lg hover:bg-green-100"><i data-lucide="check" class="w-4 h-4"></i></button>
-                        <button onclick="updateMemberStatus('${m.member_id}', 'Rejected')" title="Tolak" class="p-1.5 bg-red-50 text-danger rounded-lg hover:bg-red-100"><i data-lucide="x" class="w-4 h-4"></i></button>
-                    `;
-                } else if(m.status === 'Active') {
-                    actionBtns = `<button onclick="updateMemberStatus('${m.member_id}', 'Suspended')" class="p-1.5 bg-orange-50 text-warning rounded-lg hover:bg-orange-100 text-xs font-medium">Suspend</button>`;
+                    actionBtns = `<button onclick="updateMemberStatus('${m.member_id}', 'Active')" class="p-1.5 bg-green-50 text-success rounded-lg hover:bg-green-100"><i data-lucide="check" class="w-4 h-4"></i></button>`;
                 }
-
+                
                 tbody.innerHTML += `
                     <tr>
-                        <td class="p-4"><span class="font-medium text-gray-800">${m.member_id}</span></td>
+                        <td class="p-4 font-medium">${m.member_id}</td>
                         <td class="p-4">
-                            <p class="font-semibold text-gray-800">${m.full_name}</p>
+                            <p class="font-bold">${m.full_name}</p>
                             <p class="text-xs text-gray-500">${m.whatsapp}</p>
                         </td>
+                        <td class="p-4 text-xs">${m.bank_name || '-'}</td>
                         <td class="p-4">
-                            <p class="text-xs font-semibold text-gray-700">${m.bank_name || '-'}</p>
-                            <p class="text-xs text-gray-500">${m.bank_account || '-'} (a.n ${m.bank_owner || '-'})</p>
+                            <span class="px-2.5 py-1 rounded-full text-xs font-medium ${statusColor}">${m.status}</span>
                         </td>
-                        <td class="p-4"><span class="px-2.5 py-1 rounded-full text-xs font-medium ${statusColor}">${m.status}</span></td>
-                        <td class="p-4 text-right flex justify-end gap-2">${actionBtns}</td>
-                    </tr>
-                `;
+                        <td class="p-4 text-right">${actionBtns}</td>
+                    </tr>`;
             });
             lucide.createIcons();
         }
 
-        function renderTransactions(filter = 'All') {
-            const tbody = document.getElementById('trx-tbody');
+        function renderTransactions() {
+            const tbody = document.getElementById('trx-tbody'); 
             tbody.innerHTML = '';
             
-            let filteredTxs = AppState.transactions || [];
-            if(filter === 'Setor') filteredTxs = filteredTxs.filter(t => t.trx_type !== 'Penarikan');
-            if(filter === 'Tarik') filteredTxs = filteredTxs.filter(t => t.trx_type === 'Penarikan');
-
-            // Update Statistics
             const totalTab = AppState.dashboard.total_saldo || 0;
-            const totalSetor = filteredTxs.filter(t => t.trx_type !== 'Penarikan').reduce((acc, t) => acc + Number(t.amount), 0);
-            const totalTarik = filteredTxs.filter(t => t.trx_type === 'Penarikan').reduce((acc, t) => acc + Number(t.amount), 0);
+            const totalSetor = AppState.transactions.filter(t => t.trx_type !== 'Penarikan').reduce((acc, t) => acc + Number(t.amount), 0);
+            const totalTarik = AppState.transactions.filter(t => t.trx_type === 'Penarikan').reduce((acc, t) => acc + Number(t.amount), 0);
             
             document.getElementById('stat-total-tab').textContent = formatRp(totalTab);
             document.getElementById('stat-total-setor').textContent = formatRp(totalSetor);
             document.getElementById('stat-total-tarik').textContent = formatRp(totalTarik);
 
-            if(filteredTxs.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-gray-400">Belum ada transaksi</td></tr>`;
-                return;
+            if(!AppState.transactions.length) {
+                return tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-gray-400">Belum ada transaksi</td></tr>`;
             }
 
-            filteredTxs.forEach(t => {
+            AppState.transactions.forEach(t => {
                 let isPenarikan = t.trx_type === 'Penarikan';
-                let typeColor = isPenarikan ? 'text-warning' : 'text-success';
-                let sign = isPenarikan ? '-' : '+';
-                
                 tbody.innerHTML += `
                     <tr>
-                        <td class="p-4 text-gray-500 text-xs">${new Date(t.timestamp).toLocaleString('id-ID')}</td>
-                        <td class="p-4 font-mono text-xs text-gray-400">${t.trx_id}</td>
-                        <td class="p-4 font-medium text-gray-800">${t.member_id}</td>
-                        <td class="p-4"><span class="px-2.5 py-1 rounded-md bg-gray-50 border border-gray-100 text-xs font-medium text-gray-600">${t.trx_type}</span></td>
-                        <td class="p-4 text-right font-bold ${typeColor}">${sign} ${formatRp(t.amount)}</td>
-                    </tr>
-                `;
+                        <td class="p-4 text-xs text-gray-500">${new Date(t.timestamp).toLocaleString('id-ID')}</td>
+                        <td class="p-4 font-mono text-xs">${t.trx_id}</td>
+                        <td class="p-4 font-medium">${t.member_id}</td>
+                        <td class="p-4 text-xs">${t.trx_type}</td>
+                        <td class="p-4 text-right font-bold ${isPenarikan ? 'text-warning' : 'text-success'}">
+                            ${isPenarikan ? '-' : '+'} ${formatRp(t.amount)}
+                        </td>
+                    </tr>`;
             });
         }
 
         function renderLoans(filter = 'All') {
-            const tbody = document.getElementById('loan-tbody');
+            const tbody = document.getElementById('loan-tbody'); 
             tbody.innerHTML = '';
-            
-            let filteredLoans = AppState.loans || [];
+
+            let filteredLoans = AppState.loans; 
             if(filter !== 'All') {
                 filteredLoans = filteredLoans.filter(l => l.status === filter);
             }
-
-            // Update Stats
-            const totalActive = (AppState.loans||[]).filter(l=>l.status==='Disbursed').reduce((acc, l) => acc + Number(l.amount), 0);
-            const totalPending = (AppState.loans||[]).filter(l=>l.status==='Pending').length;
-            const totalDisbursed = totalActive; 
             
+            // Set stats NPL from Configuration AppState
+            const settingsMap = AppState.settings.reduce((acc, curr) => { 
+                acc[curr.setting_key] = curr.setting_value; 
+                return acc; 
+            }, {});
+            
+            document.getElementById('stat-npl-ratio').textContent = (settingsMap.NPL_THRESHOLD || 0) + '%';
+            document.getElementById('stat-loan-plafon').textContent = 'Maks ' + (settingsMap.LOAN_LIMIT || 3) + 'x';
+            
+            const totalActive = AppState.loans.filter(l=>l.status==='Disbursed').reduce((acc, l) => acc + Number(l.amount), 0);
             document.getElementById('stat-loan-active').textContent = formatRp(totalActive);
-            document.getElementById('stat-loan-pending').textContent = totalPending;
-            document.getElementById('stat-loan-disbursed').textContent = formatRp(totalDisbursed);
+            document.getElementById('stat-loan-pending').textContent = AppState.loans.filter(l=>l.status==='Pending').length;
 
-            if(filteredLoans.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="5" class="p-12 text-center">
-                            <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-50 text-danger mb-3"><i data-lucide="alert-circle"></i></div>
-                            <h3 class="text-gray-800 font-medium text-base">Tidak ada pinjaman</h3>
-                            <p class="text-gray-500 mt-1">Klik 'Pengajuan Baru' untuk membuat pengajuan.</p>
-                        </td>
-                    </tr>`;
-                lucide.createIcons();
-                return;
+            if(!filteredLoans.length) {
+                return tbody.innerHTML = `<tr><td colspan="5" class="p-12 text-center text-gray-400">Tidak ada data pinjaman</td></tr>`;
             }
 
             filteredLoans.forEach(l => {
-                let statusColor = l.status === 'Disbursed' ? 'bg-green-100 text-green-800' : 
-                                  (l.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' : 
-                                  (l.status === 'Lunas' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'));
+                let statusColor = l.status === 'Disbursed' ? 'bg-green-100 text-green-800' : (l.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800');
                 let actionBtns = '';
                 
                 if(l.status === 'Pending' && ['Super Admin', 'Admin', 'Ketua'].includes(AppState.user.role)) {
                     actionBtns = `
-                        <button onclick="updateLoanStatus('${l.loan_id}', 'Disbursed')" class="px-3 py-1 bg-green-50 hover:bg-green-100 text-success rounded-lg text-xs font-medium">Cairkan</button>
-                        <button onclick="updateLoanStatus('${l.loan_id}', 'Rejected')" class="px-3 py-1 bg-red-50 hover:bg-red-100 text-danger rounded-lg text-xs font-medium">Tolak</button>
+                        <button onclick="updateLoanStatus('${l.loan_id}', 'Disbursed')" class="px-3 py-1 bg-green-50 text-success rounded-lg text-xs font-medium">Cairkan</button>
+                        <button onclick="updateLoanStatus('${l.loan_id}', 'Rejected')" class="px-3 py-1 bg-red-50 text-danger rounded-lg text-xs font-medium">Tolak</button>
                     `;
                 } else if (l.status === 'Disbursed') {
-                    // Tombol Bayar & Pelunasan
                     actionBtns = `
-                        <button onclick="openPayModal('${l.loan_id}')" class="px-4 py-1.5 bg-primary hover:bg-green-500 text-white rounded-lg text-xs font-medium shadow-soft">Bayar</button>
-                        <button onclick="updateLoanStatus('${l.loan_id}', 'Lunas')" title="Tandai Lunas" class="px-3 py-1.5 bg-gray-50 hover:bg-gray-200 text-gray-600 rounded-lg text-xs font-medium border border-gray-200"><i data-lucide="check-check" class="w-3.5 h-3.5"></i></button>
+                        <button onclick="openPayModal('${l.loan_id}')" class="px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-medium shadow-soft">Bayar</button>
+                        <button onclick="updateLoanStatus('${l.loan_id}', 'Lunas')" class="px-3 py-1.5 bg-gray-50 text-gray-600 rounded-lg text-xs border border-gray-200" title="Set Lunas">
+                            <i data-lucide="check-check" class="w-3.5 h-3.5"></i>
+                        </button>
                     `;
-                } else if (l.status === 'Lunas') {
-                    actionBtns = `<span class="text-xs text-gray-400"><i data-lucide="award" class="w-4 h-4 text-blue-400"></i> Clear</span>`;
+                } else if (l.status === 'Lunas') { 
+                    actionBtns = `<span class="text-xs text-gray-400">Clear</span>`; 
                 }
 
                 tbody.innerHTML += `
                     <tr>
-                        <td class="p-4 font-mono text-xs text-gray-500">${l.loan_id}</td>
-                        <td class="p-4 font-medium text-gray-800">${l.member_id}</td>
+                        <td class="p-4 font-mono text-xs">${l.loan_id}</td>
+                        <td class="p-4 font-medium">${l.member_id}</td>
                         <td class="p-4 text-right">
-                            <p class="font-bold text-gray-800">${formatRp(l.amount)}</p>
-                            <p class="text-xs text-gray-500">${l.tenor} Bulan • Bunga ${l.interest_rate}%</p>
+                            <p class="font-bold">${formatRp(l.amount)}</p>
+                            <p class="text-xs text-gray-500">${l.tenor} Bln • Bunga ${l.interest_rate}%</p>
                         </td>
-                        <td class="p-4"><span class="px-2.5 py-1 rounded-full text-xs font-medium ${statusColor}">${l.status}</span></td>
-                        <td class="p-4 text-right flex justify-end gap-2 items-center">${actionBtns}</td>
-                    </tr>
-                `;
+                        <td class="p-4">
+                            <span class="px-2.5 py-1 rounded-full text-xs font-medium ${statusColor}">${l.status}</span>
+                        </td>
+                        <td class="p-4 text-right flex justify-end gap-2">${actionBtns}</td>
+                    </tr>`;
             });
             lucide.createIcons();
         }
 
-        // ================= ACTIONS (FORMS) =================
-        const addMemberForm = document.getElementById('add-member-form');
-        if (addMemberForm) {
-            addMemberForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const payload = {
-                    name: document.getElementById('add-m-name').value,
-                    whatsapp: document.getElementById('add-m-wa').value,
-                    email: document.getElementById('add-m-email').value,
-                    bank_name: document.getElementById('add-m-bank').value,
-                    bank_account: document.getElementById('add-m-rek').value,
-                    bank_owner: document.getElementById('add-m-owner').value
-                };
-                showLoader();
-                try {
-                    const res = await apiCall('addMember', payload);
-                    showToast(res.message);
-                    document.getElementById('modal-add-member').classList.add('hidden');
-                    addMemberForm.reset();
-                    await fetchInitialData(); // Refresh Data Instan
-                } catch (err) { showToast(err.message, 'error'); } finally { hideLoader(); }
+        function renderConfig() {
+            const settingsMap = AppState.settings.reduce((acc, curr) => { 
+                acc[curr.setting_key] = curr.setting_value; 
+                return acc; 
+            }, {});
+            
+            document.getElementById('cfg-npl').value = settingsMap.NPL_THRESHOLD || 0;
+            document.getElementById('cfg-limit').value = settingsMap.LOAN_LIMIT || 3;
+            
+            const ulProd = document.getElementById('list-products'); 
+            ulProd.innerHTML = '';
+            
+            AppState.products.forEach(p => {
+                ulProd.innerHTML += `
+                    <li class="flex justify-between items-center bg-gray-50 p-2 rounded-lg border border-gray-100">
+                        <span>${p.product_name}</span>
+                        <span class="font-bold text-success">${p.interest_rate}%</span>
+                    </li>`;
             });
         }
 
-        async function updateMemberStatus(id, status) {
-            if(!confirm(`Yakin mengubah status anggota ${id} menjadi ${status}?`)) return;
+        // --- SUBMIT LISTENERS ---
+        
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            showLoader('Verifikasi akun...');
+            try {
+                const res = await apiCall('login', { email, password });
+                AppState.token = res.token; 
+                AppState.user = res.user;
+                localStorage.setItem('kop_token', res.token); 
+                localStorage.setItem('kop_user', JSON.stringify(res.user));
+                
+                showToast("Login Berhasil"); 
+                await fetchInitialData();
+            } catch(err) { 
+                showToast(err.message, 'error'); 
+                hideLoader(); 
+            }
+        });
+
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = { 
+                full_name: document.getElementById('reg-name').value, 
+                whatsapp: document.getElementById('reg-wa').value, 
+                email: document.getElementById('reg-email').value, 
+                password: document.getElementById('reg-password').value, 
+                address: document.getElementById('reg-address').value 
+            };
             showLoader();
             try {
-                const res = await apiCall('updateMemberStatus', { member_id: id, status: status });
-                showToast(res.message);
-                await fetchInitialData();
-            } catch (err) { showToast(err.message, 'error'); hideLoader();}
-        }
+                const res = await apiCall('register', payload); 
+                showToast(res.message); 
+                switchView('login');
+            } catch(err) { 
+                showToast(err.message, 'error'); 
+                hideLoader(); 
+            }
+        });
 
-        const addTrxForm = document.getElementById('add-transaction-form');
-        if(addTrxForm) {
-            addTrxForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const payload = {
-                    member_id: document.getElementById('trx-member').value,
-                    trx_type: document.getElementById('trx-type').value,
-                    amount: document.getElementById('trx-amount').value
-                };
-                showLoader('Memproses Transaksi...');
-                try {
-                    const res = await apiCall('addTransaction', payload);
-                    showToast(res.message);
-                    document.getElementById('modal-add-transaction').classList.add('hidden');
-                    addTrxForm.reset();
-                    
-                    // Siapkan Data untuk PDF/WA Struk
-                    prepareReceipt(res.trx_id, payload, 'transaction');
-                    
-                    await fetchInitialData(); // Refresh list transaksi
-                    document.getElementById('modal-receipt').classList.remove('hidden');
-
-                } catch (err) { showToast(err.message, 'error'); hideLoader();} 
-            });
-        }
-
-        const addLoanForm = document.getElementById('add-loan-form');
-        if(addLoanForm) {
-            addLoanForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const payload = {
-                    member_id: document.getElementById('loan-member').value,
-                    product_id: document.getElementById('loan-product').value,
-                    amount: document.getElementById('loan-amount').value,
-                    tenor: document.getElementById('loan-tenor').value
-                };
-                showLoader('Mengirim Pengajuan...');
-                try {
-                    const res = await apiCall('addLoan', payload);
-                    showToast(res.message);
-                    document.getElementById('modal-add-loan').classList.add('hidden');
-                    addLoanForm.reset();
-                    await fetchInitialData();
-                } catch (err) { showToast(err.message, 'error'); hideLoader();}
-            });
-        }
-
-        async function updateLoanStatus(id, status) {
-            if(!confirm(`Yakin mengubah status pinjaman ${id} menjadi ${status}?`)) return;
-            showLoader();
+        document.getElementById('forgot-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('forgot-email').value;
+            showLoader('Mengirim Request...');
             try {
-                const res = await apiCall('updateLoanStatus', { loan_id: id, status: status });
+                const res = await apiCall('forgotPassword', { email });
                 showToast(res.message);
+                document.getElementById('modal-forgot').classList.add('hidden');
+                document.getElementById('forgot-form').reset();
+            } catch(err) { 
+                showToast(err.message, 'error'); 
+                hideLoader(); 
+            }
+        });
+
+        document.getElementById('form-config-settings').addEventListener('submit', async(e) => {
+            e.preventDefault(); 
+            showLoader('Menyimpan Pengaturan...');
+            try {
+                await apiCall('saveSettings', { 
+                    npl: document.getElementById('cfg-npl').value, 
+                    limit: document.getElementById('cfg-limit').value 
+                });
+                showToast("Pengaturan Global Tersimpan!"); 
                 await fetchInitialData();
-            } catch (err) { showToast(err.message, 'error'); hideLoader();}
+            } catch(err) { 
+                showToast(err.message, 'error'); 
+                hideLoader(); 
+            }
+        });
+
+        document.getElementById('form-config-product').addEventListener('submit', async(e) => {
+            e.preventDefault(); 
+            showLoader('Menyimpan Produk...');
+            try {
+                await apiCall('addProduct', { 
+                    product_name: document.getElementById('cfg-prod-name').value, 
+                    type: 'Pinjaman', 
+                    interest_rate: document.getElementById('cfg-prod-rate').value, 
+                    max_tenor: document.getElementById('cfg-prod-tenor').value 
+                });
+                showToast("Produk Pinjaman Ditambahkan!"); 
+                document.getElementById('form-config-product').reset(); 
+                await fetchInitialData();
+            } catch(err) { 
+                showToast(err.message, 'error'); 
+                hideLoader(); 
+            }
+        });
+
+        document.getElementById('form-config-account').addEventListener('submit', async(e) => {
+            e.preventDefault(); 
+            showLoader('Menyimpan Rekening...');
+            try {
+                await apiCall('addCoopAccount', { 
+                    account_name: document.getElementById('cfg-acc-name').value, 
+                    account_number: document.getElementById('cfg-acc-no').value 
+                });
+                showToast("Rekening Kas Ditambahkan!"); 
+                document.getElementById('form-config-account').reset(); 
+                await fetchInitialData();
+            } catch(err) { 
+                showToast(err.message, 'error'); 
+                hideLoader(); 
+            }
+        });
+
+        function updateMemberStatus(id, status) {
+            askConfirm(`Setujui Anggota ${id}?`, async () => {
+                showLoader(); 
+                try { 
+                    await apiCall('updateMemberStatus', { member_id: id, status: status }); 
+                    showToast("Status Diperbarui"); 
+                    await fetchInitialData(); 
+                } catch (err) { 
+                    showToast(err.message, 'error'); 
+                    hideLoader();
+                }
+            });
         }
 
-        // TRIGGER BUKA MODAL BAYAR
+        function updateLoanStatus(id, status) {
+            askConfirm(`Proses pinjaman ${id} menjadi ${status}?`, async () => {
+                showLoader(); 
+                try { 
+                    await apiCall('updateLoanStatus', { loan_id: id, status: status }); 
+                    showToast("Status Pinjaman Diperbarui"); 
+                    await fetchInitialData(); 
+                } catch (err) { 
+                    showToast(err.message, 'error'); 
+                    hideLoader();
+                }
+            });
+        }
+
+        document.getElementById('add-transaction-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = { 
+                member_id: document.getElementById('trx-member').value, 
+                trx_type: document.getElementById('trx-type').value, 
+                amount: document.getElementById('trx-amount').value 
+            };
+            showLoader(); 
+            try {
+                const res = await apiCall('addTransaction', payload); 
+                showToast(res.message);
+                document.getElementById('modal-add-transaction').classList.add('hidden'); 
+                e.target.reset();
+                
+                prepareReceipt(res.trx_id, payload.member_id, payload.trx_type, payload.amount);
+                
+                await fetchInitialData(); 
+                document.getElementById('modal-receipt').classList.remove('hidden');
+            } catch (err) { 
+                showToast(err.message, 'error'); 
+                hideLoader();
+            } 
+        });
+
+        document.getElementById('add-loan-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = { 
+                member_id: document.getElementById('loan-member').value, 
+                product_id: document.getElementById('loan-product').value, 
+                amount: document.getElementById('loan-amount').value, 
+                tenor: document.getElementById('loan-tenor').value 
+            };
+            showLoader(); 
+            try {
+                const res = await apiCall('addLoan', payload); 
+                showToast(res.message);
+                document.getElementById('modal-add-loan').classList.add('hidden'); 
+                e.target.reset(); 
+                await fetchInitialData();
+            } catch (err) { 
+                showToast(err.message, 'error'); 
+                hideLoader();
+            }
+        });
+
         window.openPayModal = function(loanId) {
             document.getElementById('pay-loan-id').value = loanId;
-            document.getElementById('pay-amount').value = '';
+            document.getElementById('pay-amount').value = ''; 
             document.getElementById('pay-fine').value = '';
             document.getElementById('modal-pay-installment').classList.remove('hidden');
         }
 
-        // PROSES BAYAR ANGSURAN
-        const payInstForm = document.getElementById('pay-installment-form');
-        if(payInstForm) {
-            payInstForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const payload = {
-                    loan_id: document.getElementById('pay-loan-id').value,
-                    amount: document.getElementById('pay-amount').value,
-                    fine_amount: document.getElementById('pay-fine').value || 0,
-                    payment_method: document.getElementById('pay-method').value
-                };
-                showLoader('Memproses Pembayaran...');
-                try {
-                    const res = await apiCall('payInstallment', payload);
-                    showToast(res.message);
-                    document.getElementById('modal-pay-installment').classList.add('hidden');
-                    payInstForm.reset();
-                    
-                    // Siapkan Struk Tanda Terima Angsuran
-                    prepareReceipt(res.inst_id, payload, 'installment');
-                    
-                    await fetchInitialData(); // Refresh UI instan
-                    document.getElementById('modal-receipt').classList.remove('hidden');
-
-                } catch (err) { showToast(err.message, 'error'); hideLoader();} 
-            });
-        }
-
-        // ================= PDF & WA RECEIPT LOGIC =================
-        function prepareReceipt(id, payload, type = 'transaction') {
-            const dateStr = new Date().toLocaleString('id-ID');
-            let memberName = '';
-            let phone = '';
-            let finalAmount = 0;
-            let displayType = '';
-
-            if (type === 'installment') {
+        document.getElementById('pay-installment-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = { 
+                loan_id: document.getElementById('pay-loan-id').value, 
+                amount: document.getElementById('pay-amount').value, 
+                fine_amount: document.getElementById('pay-fine').value || 0, 
+                payment_method: document.getElementById('pay-method').value 
+            };
+            showLoader('Memproses Pembayaran...'); 
+            try {
+                const res = await apiCall('payInstallment', payload); 
+                showToast(res.message);
+                document.getElementById('modal-pay-installment').classList.add('hidden'); 
+                e.target.reset();
+                
                 const loan = AppState.loans.find(l => l.loan_id === payload.loan_id);
-                const memberId = loan ? loan.member_id : '-';
-                const memberObj = AppState.members.find(m => m.member_id === memberId);
+                prepareReceipt(
+                    res.inst_id, 
+                    loan ? loan.member_id : '-', 
+                    `Angsuran (${payload.payment_method})`, 
+                    Number(payload.amount) + Number(payload.fine_amount)
+                );
                 
-                memberName = memberObj ? memberObj.full_name : memberId;
-                phone = memberObj ? memberObj.whatsapp : '';
-                finalAmount = Number(payload.amount) + Number(payload.fine_amount || 0);
-                displayType = `Pembayaran Angsuran (${payload.payment_method})`;
-                
-                document.getElementById('pdf-id').textContent = id || "INST-XXX";
-                document.getElementById('pdf-member').textContent = `${memberId} - ${memberName}`;
-            } else {
-                const memberObj = AppState.members.find(m => m.member_id === payload.member_id);
-                memberName = memberObj ? memberObj.full_name : payload.member_id;
-                phone = memberObj ? memberObj.whatsapp : '';
-                finalAmount = payload.amount;
-                displayType = `Transaksi ${payload.trx_type}`;
+                await fetchInitialData(); 
+                document.getElementById('modal-receipt').classList.remove('hidden');
+            } catch (err) { 
+                showToast(err.message, 'error'); 
+                hideLoader();
+            } 
+        });
 
-                document.getElementById('pdf-id').textContent = id || "TRX-XXX";
-                document.getElementById('pdf-member').textContent = `${payload.member_id} - ${memberName}`;
-            }
+        function prepareReceipt(trxId, memberId, trxType, amount) {
+            const memberObj = AppState.members.find(m => m.member_id === memberId);
+            const memberName = memberObj ? memberObj.full_name : memberId;
+            const dateStr = new Date().toLocaleString('id-ID');
             
+            document.getElementById('pdf-id').textContent = trxId || "TRX-XXX";
             document.getElementById('pdf-date').textContent = dateStr;
-            document.getElementById('pdf-type').textContent = displayType;
-            document.getElementById('pdf-amount').textContent = formatRp(finalAmount);
+            document.getElementById('pdf-member').textContent = `${memberId} - ${memberName}`;
+            document.getElementById('pdf-type').textContent = trxType;
+            document.getElementById('pdf-amount').textContent = formatRp(amount);
 
-            // Setup WhatsApp Action Button
             const waBtn = document.getElementById('btn-send-wa');
-            if(phone) {
-                if(phone.startsWith('0')) phone = '62' + phone.slice(1);
-                const textMsg = `Halo ${memberName},\n\nTerima kasih. Berikut adalah tanda terima digital iMersKoperasi:\n- ID: *${id}*\n- Jenis: *${displayType}*\n- Tanggal: *${dateStr}*\n- Nominal: *${formatRp(finalAmount)}*\n\nSimpan pesan ini sebagai bukti yang sah.`;
-                const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(textMsg)}`;
-                waBtn.onclick = () => window.open(waUrl, '_blank');
-            } else {
-                waBtn.onclick = () => showToast("Nomor WA anggota tidak ditemukan", "error");
+            if(memberObj && memberObj.whatsapp) {
+                let phone = memberObj.whatsapp; 
+                if(phone.startsWith('0')) {
+                    phone = '62' + phone.slice(1);
+                }
+                const textMsg = `Halo ${memberName},\n\nTerima kasih. Berikut bukti transaksi iMersKoperasi:\n- ID: *${trxId}*\n- Jenis: *${trxType}*\n- Tanggal: *${dateStr}*\n- Nominal: *${formatRp(amount)}*\n\nSimpan pesan ini sebagai bukti sah.`;
+                waBtn.onclick = () => window.open(`https://wa.me/${phone}?text=${encodeURIComponent(textMsg)}`, '_blank');
+            } else { 
+                waBtn.onclick = () => showToast("Nomor WA anggota tidak ada", "error"); 
             }
         }
 
@@ -1303,73 +1372,26 @@
             const element = document.getElementById('printable-receipt');
             const trxId = document.getElementById('pdf-id').textContent;
             
-            // Munculkan sebentar, generate, hilangkan lagi
             element.classList.remove('top-[-9999px]', 'left-[-9999px]');
             
-            html2pdf().set({
-                margin: 0,
-                filename: `Struk_${trxId}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2 },
-                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+            html2pdf().set({ 
+                margin: 0, 
+                filename: `Struk_${trxId}.pdf`, 
+                image: { type: 'jpeg', quality: 0.98 }, 
+                html2canvas: { scale: 2 }, 
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' } 
             }).from(element).save().then(() => {
                 element.classList.add('top-[-9999px]', 'left-[-9999px]');
             });
         }
 
-        // CHARTS INIT (Chart.js)
-        let chartInstances = [];
-        function initCharts() {
-            chartInstances.forEach(c => c.destroy());
-            chartInstances = [];
-
-            const ctxGrowth = document.getElementById('growthChart');
-            if(ctxGrowth) {
-                chartInstances.push(new Chart(ctxGrowth.getContext('2d'), {
-                    type: 'line',
-                    data: {
-                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul'],
-                        datasets: [{
-                            label: 'Total Simpanan',
-                            data: [5000000, 6500000, 7200000, 8000000, 9500000, 11000000, 12500000],
-                            borderColor: '#A8D5BA',
-                            backgroundColor: 'rgba(168, 213, 186, 0.2)',
-                            borderWidth: 2,
-                            tension: 0.4,
-                            fill: true
-                        }]
-                    },
-                    options: { responsive: true, plugins: { legend: { display: false } } }
-                }));
-            }
-
-            const ctxComp = document.getElementById('compositionChart');
-            if(ctxComp) {
-                chartInstances.push(new Chart(ctxComp.getContext('2d'), {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Wajib', 'Pokok', 'Sukarela'],
-                        datasets: [{
-                            data: [20, 10, 70],
-                            backgroundColor: ['#A8D5BA', '#FFE8A3', '#8BC34A'],
-                            borderWidth: 0
-                        }]
-                    },
-                    options: { responsive: true, cutout: '70%' }
-                }));
-            }
-        }
-
-        // INITIALIZATION
         window.onload = () => {
             if (AppState.token && AppState.user) {
-                // If logged in, fetch data right away
-                fetchInitialData();
+                fetchInitialData(); 
             } else {
                 switchView('login');
             }
         };
-
     </script>
 </body>
 </html>
